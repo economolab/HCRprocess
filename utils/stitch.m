@@ -23,7 +23,7 @@ function stitch(file, d, file_frac)
     savef = strcat(savef,'.tif');
 
     ij.IJ.saveAs("Tiff", savef);
-
+    ij.IJ.run("Close All");
     ij.IJ.run("Quit","");
 
     junk = fullfile(filepath,'TileConfiguration.registered.txt');
@@ -45,8 +45,10 @@ function stitch(file, d, file_frac)
     
     V = V(:,:,:,maskZ);
 
-    replace = 'channels=' + string(sum(maskZ));
-    info.ImageDescription = regexprep(info.ImageDescription, 'slices=(\d*)', replace);
+    replace = 'slices=' + string(sum(maskZ));
+    id = info.ImageDescription;
+    id = regexprep(id, 'slices=(\d*)', replace);
+    [info.ImageDescription] = deal(id);
 
     d.Message = strcat(file_frac, ' Saving...');
 

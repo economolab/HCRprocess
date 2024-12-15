@@ -5,5 +5,6 @@ function T = read_table_with_row_names(path)
     T = readtable(path,'VariableNamingRule','preserve');
     T.Properties.RowNames = T{:,'Row'};
     T = removevars(T,'Row');
+    T.Properties.DimensionNames{1} = 'Row';
     
 end
