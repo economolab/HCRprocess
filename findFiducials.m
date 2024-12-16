@@ -1,22 +1,22 @@
-function InteractiveRegistration_v4(fixed_fn, moving_fn, fixed_reg_channel, moving_reg_channel)
-clear; clc; 
+function findFiducials(fixed_fn, moving_fn, fixed_reg_channel, moving_reg_channel, MainApp)
 
 parent_directory = pwd;
  
 fn = {};
 im = loadData(fn, parent_directory);
-addpath(genpath(fullfile(parent_directory, 'nonrigid_version23')));
+addpath(genpath(fullfile(parent_directory, 'reg_utils')));
 im.fn = fn;
 
-fixed_fn = 'F:\proto_dir\2024-12-15_r0\stitch\s02__NT445_GFP488_dTom547.tif';
-moving_fn = 'F:\proto_dir\2024-12-15_r0\stitch\s02__NT445_GFP488_dTom547.tif';
-fixed_reg_channel = 1;
-moving_reg_channel = 1;
+% fixed_fn = 'F:\proto_dir\2024-12-15_r0\stitch\s02__NT445_GFP488_dTom547.tif';
+% moving_fn = 'F:\proto_dir\2024-12-15_r0\stitch\s02__NT445_GFP488_dTom547.tif';
+% fixed_reg_channel = 1;
+% moving_reg_channel = 1;
 
 im.fixed_fn = fixed_fn;
 im.moving_fn = moving_fn;
 im.fixed_reg_channel = fixed_reg_channel;
 im.moving_reg_channel = moving_reg_channel;
+im.MainApp = MainApp;
 
 initGUI(im);
 
@@ -28,6 +28,7 @@ function initGUI(h)
 
 
 h.fig = figure(124);
+h.fig.WindowState = 'maximized';
 BackCol = [1 1 1];
 set(h.fig, 'Units', 'Normalized', 'Position', [0.01 0.1 0.87 0.7]);
 set(h.fig, 'DefaultAxesLineWidth', 2, 'DefaultAxesFontSize', 12, 'Color', BackCol);
@@ -421,21 +422,19 @@ if numel(h.pts.fix)<3
     return;
 end
 
-def_fn = ['Pts_' date '.mat'];
+[~,name,~] = fileparts(h.moving_fn);
+name = split(name,'__');
+name = name{1};
+
+def_fn = [name '_Pts_' date '.mat'];
 
 if ~exist(fullfile(pwd, 'PTS'), 'dir')
     mkdir(fullfile(pwd, 'PTS'));
 end
 
-if ~exist("outfile",'var')
-    [fn,path] = uiputfile('*.mat','Select Pts file name', fullfile(pwd, 'PTS', def_fn));
-
-    if ~fn
-        return
-    end
-    outfile = fullfile(path, fn);
-end
-
+[filepath, ~, ~] = fileparts(h.moving_fn);
+[filepath, ~, ~] = fileparts(filepath);
+outfile = fullfile(filepath,"internal","fiducials",def_fn);
 
 d = h.pts;
 image_files = h.fn;
@@ -444,7 +443,10 @@ fiximsz = size(h.fixed);
 disp(['Saving ' num2str(size(d.fix, 1)) ' points']);
 save(outfile, 'd', 'fiximsz', 'image_files');
 
+h.MainApp.finish_fiducials()
+
 guidata(fig, h);
+close(fig)
 
 function load_fixed_button_fcn(fig, fixed_fn, fixed_reg_channel)
 load_button_helper(fig, fixed_fn,0,fixed_reg_channel)
