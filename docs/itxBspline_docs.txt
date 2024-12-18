@@ -1,0 +1,5 @@
+"args" is a struct containing all the variables passed from MATLAB to python. It's saved as a json in a specified location that must match between MATLAB and python. 
+
+elastixBspline.py
+This script loads the json created in MATLAB and runs "doIntensityBspline." The first thing this function does is load and preprocess the moving and fixed images with "getProcessedImages." 
+

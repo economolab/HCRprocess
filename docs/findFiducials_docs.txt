@@ -1,0 +1,3 @@
+"pts" is a struct with 3 fields: fix, mov, and cur. Each field is an n x 3 array (x, y, z) where n is the number of fiducials that have so far been marked. 
+
+"Save points" saves a mat file with the following variables: d, fiximsz, and image_files. "d" is "pts" as described previously. "fiximsz" is a double array describing the (x, y, z) dimensions of the fixed image. "image_fields" is a struct with 4 fields: fixed, fixedChan, moving, and movingChan. These correspond to the full file names of the fixed and moving images as well as their registration channels. 
