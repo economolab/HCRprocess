@@ -225,7 +225,7 @@ def process_single_channel_image(image, head, filename, parameterObjFinal):
     transformed_image = transform_image(image, parameterObjFinal)
     save_image(transformed_image, os.path.join(head, "t_" + filename))
 
-def process_multi_channel_image(image, channels, head, filename, parameterObjFinal):
+def process_multi_channel_image(image, channels, head, parameterObjFinal):
     for k in range(channels):
         print(f'Transforming channel {k+1} of {channels}')
         channel_dim = image.shape.index(channels) if channels in image.shape else None
@@ -235,21 +235,21 @@ def process_multi_channel_image(image, channels, head, filename, parameterObjFin
             slices[channel_dim] = k
             channel_image = image[tuple(slices)]
             transformed_image = transform_image(channel_image, parameterObjFinal, is_single_channel=False)
-            save_image(transformed_image, os.path.join(head, f'channel_{k+1}_{filename}'))
+            save_image(transformed_image, os.path.join(head, f'channel_{k+1}.tif'))
 
 def transformAndSaveOthers(movingImFilename,parameterObjFinal, numChannels, outFile, nDims, fixedImShape):
     head, _ = os.path.split(outFile)
     channels = int(numChannels)
 
-    filepath = movingImFilename
+    filename = movingImFilename
 
-    print(filepath)
-    image = itk.GetImageFromArray(io.imread(filepath).astype(np.float32))
+    print(filename)
+    image = itk.GetImageFromArray(io.imread(filename).astype(np.float32))
 
     if channels > 1:
         if nDims != 3:
             raise Exception("Channels only supported for 3D images")
-        process_multi_channel_image(image, channels, head, filename, parameterObjFinal)
+        process_multi_channel_image(image, channels, head, parameterObjFinal)
     else:
         if nDims == 3 or len(image.shape) == 2:
             process_single_channel_image(image, head, filename, parameterObjFinal)
