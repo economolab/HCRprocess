@@ -1,4 +1,18 @@
-TODO
+# Installation
+
+Install MATLAB:
+
+https://www.mathworks.com/help/install/ug/install-products-with-internet-connection.html
+
+Clone this repository and run "HCRprocess.mlapp"
+
+## ImageJ in MATLAB
+
+
+
+
+
+# TODO
 
 1) itk bs warp
 2) beautification
