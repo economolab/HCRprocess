@@ -42,3 +42,4 @@ pip install itk-elastix
 8) memory usage reduction and clearing
 9) separate back end from gui for reg and unmix, run with progress dialog box
 10) delete intermediates
+11) delete or properly store files created by registration
