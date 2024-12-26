@@ -5,11 +5,13 @@
 Clone this repository and run `HCRprocess.mlapp`
 
 ## ImageJ in MATLAB
-Required for stitching, registration, and final processing
+Required for stitching and final processing
 
 [Install Fiji](https://imagej.net/software/fiji/downloads)
 
 [Add the ImageJ-MATLAB update site in ImageJ and increase your Java heap memory size in MATLAB](https://imagej.net/scripting/matlab)
+
+[How to increase Java heap memory size beyond the default maximum allowed value](https://www.mathworks.com/matlabcentral/answers/92813-how-do-i-increase-the-heap-space-for-the-java-vm-in-matlab#answer_183274)
 
 Set `fijiSciptsDir` in `params.m` to the correct Fiji scripts directory on your system. If you don't know where this is, you can use `File -> Show Folder -> ImageJ` in Fiji. 
 
