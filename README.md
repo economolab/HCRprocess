@@ -32,7 +32,7 @@ pip install itk-elastix
 
 # User Guide
 
-## File Structuring
+## Input File Structuring
 Create an experiment directory in the following format:
 ```
 YYYY-MM-DD_EXPERIMENT
@@ -86,7 +86,7 @@ Note the double underscores separating both the unique identifier from channels 
 
 * = ignored by automatic file detection
 ```
-Files containing any of the following case-insensitive keywords are ignored by the automatic file detection system:  
+Files containing any of the following case-insensitive keywords are ignored by the automatic file detection system: `ROI`, `overview`, `TileConfiguration`. All other subdirectories will be automatically created the first time `HCRprocess` is run with an experiment directory.   
 
 # TODO
 
@@ -96,7 +96,6 @@ Files containing any of the following case-insensitive keywords are ignored by t
 4) cellpose 3 model training and implementation
 5) Batch registration
 6) do all button
-7) memory monitor
 8) memory usage reduction and clearing
 9) separate back end from gui for reg and unmix, run with progress dialog box
 10) delete intermediates
