@@ -1,5 +1,7 @@
 function stitch(file, d, file_frac)
    
+    java.lang.Runtime.getRuntime.gc;
+    
     ImageJ
 
     ij.IJ.run("Grid/Collection stitching", "type=[Positions from file] " + ...
@@ -25,6 +27,8 @@ function stitch(file, d, file_frac)
     ij.IJ.saveAs("Tiff", savef);
     ij.IJ.run("Close All");
     ij.IJ.run("Quit","");
+    
+    java.lang.Runtime.getRuntime.gc;
 
     junk = fullfile(filepath,'TileConfiguration.registered.txt');
     delete(junk)

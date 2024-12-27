@@ -20,6 +20,8 @@ function process_final(file)
     [filepath,~,~] = fileparts(filepath);
     savepath = fullfile(filepath,'final',slice);
 
+    java.lang.Runtime.getRuntime.gc;
+
     ImageJ
 
     ij.IJ.run("Bio-Formats", strcat("open=",file) + ...
@@ -37,5 +39,7 @@ function process_final(file)
     end
 
     ij.IJ.run("Quit","");
+
+    java.lang.Runtime.getRuntime.gc;
 
 end
