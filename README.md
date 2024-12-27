@@ -86,7 +86,7 @@ Note the double underscores separating both the unique identifier from channels 
 
 * = ignored by automatic file detection
 ```
-Files containing any of the following case-insensitive keywords are ignored by the automatic file detection system: `ROI`, `overview`, `TileConfiguration`. All other subdirectories will be automatically created the first time `HCRprocess` is run with an experiment directory.   
+Files containing any of the following case-insensitive keywords are ignored by the automatic file detection system: `ROI`, `overview`, `TileConfiguration`. Several subdirectories will be automatically created the first time `HCRprocess` is run with an experiment directory.   
 
 # TODO
 
