@@ -28,6 +28,7 @@ In Anaconda Prompt, activate the environment, and then install the required pack
 conda activate HCRprocess
 pip install itk
 pip install itk-elastix
+python -m pip install cellpose[gui]
 ```
 
 # User Guide
