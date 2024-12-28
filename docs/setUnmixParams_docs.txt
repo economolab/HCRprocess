@@ -1,0 +1,16 @@
+lipomodelchans_edit: editable string, denotes channels lipo removal model is built from
+liporemovechans_edit: editable string, enotes channels lip is removed from
+
+lipo_checkbox: Text = "Remove lipofuscin"; determines if removeLipo() attempts to remove lipofuscin from h.stack or not when called. 
+
+lipo.bg: column vector of length Nchan, initialized as zeros
+lipo.amp: column vector of length Nchan, initialized as zeros
+
+lipoCheckboxCallback(): called when "Show ROIS" is checked or unchecked. If checked, makes bgROI and lipoCrosshair visible; if unchecked, makes them invisible. 
+updateLipoModel(): called when "Update lipo model" is pressed. Calls getLipoParams and then plots lipo.bg and lipo.amp in lipoAx. 
+getLipoParams(): updates lipo.bg and lipo.amp. lipo.bg is set to the median value of the background area. lipo.amp is set to the value at the lipoCrosshair position minus lipo.bg. 
+
+removeLipo(): does nothing if lipo_checkbox is not checked. Otherwise,  
+
+
+
