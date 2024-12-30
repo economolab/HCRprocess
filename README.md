@@ -31,6 +31,8 @@ pip install itk-elastix
 python -m pip install cellpose[gui]
 ```
 
+`HCRprocess` calls Python from MATLAB using the `[system](https://www.mathworks.com/help/matlab/ref/system.html)` function and `[python](https://docs.python.org/3/using/cmdline.html)` command. 
+
 # User Guide
 
 ## Input File Structuring
