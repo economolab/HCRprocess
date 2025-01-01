@@ -103,4 +103,4 @@ Files containing any of the following case-insensitive keywords are ignored by t
 9) separate back end from gui for reg and unmix, run with progress dialog box
 10) delete intermediates
 11) delete or properly store files created by registration
-12) fix tiff writing in MATLAB
+12) fix tiff writing in MATLAB (and tiff reading, need dedicated functions for both that are called for everything, currently using hacky solution of reopening and writing in imagej for all writes, we already have write while incrementing ifd functionality, just need read while incrementing ifd functionality)
