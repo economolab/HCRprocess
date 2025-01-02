@@ -1,4 +1,4 @@
-function findFiducials(fixed_fn, moving_fn, fixed_reg_channel, moving_reg_channel, MainApp)
+function findFiducials(fixed_fn, moving_fn, fixed_reg_channel, moving_reg_channel, MainApp, load_fid)
 
 parent_directory = pwd;
  
@@ -18,12 +18,12 @@ im.fixed_reg_channel = fixed_reg_channel;
 im.moving_reg_channel = moving_reg_channel;
 im.MainApp = MainApp;
 
-initGUI(im);
+initGUI(im, load_fid);
 
 
 
 
-function initGUI(h)
+function initGUI(h, load_fid)
 
 
 
@@ -292,6 +292,10 @@ guidata(h.fig, h);
 load_fixed_button_fcn(gcf,h.fixed_fn,h.fixed_reg_channel)
 load_moving_button_fcn(gcf,h.moving_fn,h.moving_reg_channel)
 
+if load_fid == 1
+    load_button_fcn(gcf)
+end
+
 
 function en = getEn(val)
 if val
@@ -473,7 +477,7 @@ end
 if ~exist("regChannel","var")
     regChannel = round(get(h.numChannelsSlider, 'value'));
 end
-image = loadTifFast(fileName,regChannel);
+image = read_tiff(fileName,regChannel);
 numChannels = getNumChannelsTif(fileName);
 % if size(image,3)==1
 %     image = cat(3,zeros(size(image)),image,zeros(size(image)));
@@ -559,12 +563,23 @@ updateImage([],[],fig);
 
 
 
-function load_button_fcn(~, ~, fig)
-[fn,path] = uigetfile('*.mat','Select Pts Set name', fullfile(pwd, 'PTS'));
-if length(fn)<2
-    return;
-end
-S = load(fullfile(path, fn));
+function load_button_fcn(fig)
+
+h = guidata(fig);
+
+% find the directory where the fiducials are stored
+[filepath,name,~] = fileparts(h.moving_fn);
+[filepath,~,~] = fileparts(filepath);
+targetDir = fullfile(filepath,'internal','fiducials');
+
+% obtain uniq id of file
+uniq_id = split(name,'__');
+uniq_id = uniq_id{1};
+
+% obtain full file name of fiducials
+fullfn = find_fn_uniq_id(uniq_id,targetDir);
+
+S = load(fullfn);
 if isfield(S, 'd');     d = S.d;        end
 
 

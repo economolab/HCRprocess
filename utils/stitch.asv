@@ -62,6 +62,5 @@ function stitch(file, d, file_frac)
     d.Message = strcat(file_frac, ' Saving...');
 
     write_tiff(savef, V, info)
-    % write_tiff_ij(savef)
 
 end

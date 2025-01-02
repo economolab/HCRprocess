@@ -15,11 +15,11 @@ function write_tiff(path, im, info)
     tagstruct.Compression = Tiff.Compression.None;
     tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
     tagstruct.ImageDescription = info.ImageDescription;
+    tagstruct.ExtraSamples = Tiff.ExtraSamples.Unspecified;
 
     for ii=1:sz(4)
         plane = im(:,:,:,ii);
         setTag(t,tagstruct);
-        warning('off','MATLAB:imagesci:Tiff:missingExtraSamples')
         write(t,uint16(plane));
         writeDirectory(t);
     end

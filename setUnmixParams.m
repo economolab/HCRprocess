@@ -1,14 +1,14 @@
-function setUnmixParams(inputf, parentApp, mode)
+function setUnmixParams(inputf,parentApp, mode,load_params)
 
 parent_directory = pwd;
 addpath(genpath(fullfile(parent_directory, 'utils')));
 
-initFig(inputf, parentApp,mode);
+initFig(inputf, parentApp,mode,load_params);
 
 
 
 
-function initFig(inputf, parentApp,mode)
+function initFig(inputf, parentApp,mode,load_params)
 
 h.mode = mode;
 h.parentApp = parentApp;
@@ -233,6 +233,10 @@ if strcmp(h.mode,'write')
     close(h.fig)
 end
 
+if load_params == 1
+    loadButtonFcn([],[],gcf)
+end
+
 
 
 
@@ -335,9 +339,9 @@ h.ymax = h.Nrow;
 h.xmax = h.Ncol;
 
 [h.Nchans, h.Nplanes] = parseInfo(h.info(1));
-h.stack = tiffreadVolume(fullfn);
+h.stack = read_tiff(fullfn);
 % h.stack = reshape(h.stack, h.Nrow, h.Ncol, h.Nchans, h.Nplanes);
-h.stack = permute(h.stack, [1 2 4 3]);
+% h.stack = permute(h.stack, [1 2 4 3]);
 
 % cnt = 0;
 % for i = 1:h.Nplanes

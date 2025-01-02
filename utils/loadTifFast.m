@@ -15,7 +15,9 @@ end
 
 % im = tiffreadVolume(FileTif,"PixelRegion",{[1 1 inf],[1 1 inf],[targetChannel numChannels inf]});
 im = tiffreadVolume(FileTif);
-im = im(:,:,:,targetChannel);
+if exist(targetChannel,'var')
+    im = im(:,:,:,targetChannel);
+end
 
 warning on;
 disp('Done loading Tif');
