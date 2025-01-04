@@ -423,9 +423,13 @@ h = guidata(fig);
 
 [filepath,~,~] = fileparts(h.parent);
 filepath = fullfile(filepath,'internal','uparams');
-[~,name,~] = fileparts(h.fn);
-loadf = fullfile(filepath,strcat(name,'.mat'));
-load(loadf);
+
+split_fn = split(h.fn,'__');
+uniq_id = split_fn{1};
+
+fullfn = find_fn_uniq_id(uniq_id,filepath);
+
+load(fullfn);
 
 h.str = params.str;
 for i = 1:h.Nchans
@@ -549,6 +553,9 @@ tagstruct.BitsPerSample = 16;
 tagstruct.SamplesPerPixel = h.Nchans;
 tagstruct.Compression = Tiff.Compression.None;
 tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+tagstruct.ImageDescription = h.info.ImageDescription;
+tagstruct.ExtraSamples = Tiff.ExtraSamples.Unspecified;
+
 for ii=1:h.Nplanes
     h.plane = ii;
     guidata(fig, h);
