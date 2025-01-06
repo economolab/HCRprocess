@@ -11,14 +11,19 @@ function process_final(file)
     [filepath,~,~] = fileparts(filepath);
     [~,name,~] = fileparts(filepath);
     newStr = split(name,"_");
-    round = newStr{end};
+    
+    for i=1:length(newStr)
+        if contains(newStr{i},'r')
+            round = newStr{i};
+        end
+    end
 
     for i=1:length(channels)
         channels{i} = strcat(round,'_',channels{i},'.tif');
     end
    
     [filepath,~,~] = fileparts(filepath);
-    savepath = fullfile(filepath,'final',slice);
+    savepath = fullfile(filepath,'post','core_output',slice);
 
     java.lang.Runtime.getRuntime.gc;
 
