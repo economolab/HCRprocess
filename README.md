@@ -28,7 +28,7 @@ In Anaconda Prompt, activate the environment, and then install the required pack
 conda activate HCRprocess
 pip install itk
 pip install itk-elastix
-python -m pip install cellpose[gui]
+pip install cellpose[gui]
 ```
 
 `HCRprocess` calls Python using MATLAB's [system](https://www.mathworks.com/help/matlab/ref/system.html) function and the [python](https://docs.python.org/3/using/cmdline.html) command line invocation. 
