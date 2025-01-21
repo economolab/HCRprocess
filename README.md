@@ -31,7 +31,7 @@ pip install itk-elastix
 pip install cellpose[gui]
 ```
 
-`HCRprocess` calls Python using MATLAB's [system](https://www.mathworks.com/help/matlab/ref/system.html) function and the [python](https://docs.python.org/3/using/cmdline.html) command line invocation. 
+Set `anacondaSciptsDir` in `params.m` to the correct Anaconda scripts directory on your system. `HCRprocess` calls Python using MATLAB's [system](https://www.mathworks.com/help/matlab/ref/system.html) function and the [python](https://docs.python.org/3/using/cmdline.html) command line invocation. 
 
 # User Guide
 
