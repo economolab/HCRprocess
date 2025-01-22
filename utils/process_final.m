@@ -1,4 +1,4 @@
-function process_final(file)
+function process_final(file, radius)
    
     [filepath,name,ext] = fileparts(file);
     orig_file = strcat(name,ext);
@@ -34,11 +34,13 @@ function process_final(file)
         "rois_import=[ROI manager] " + ...
         "view=Hyperstack " + ...
         "stack_order=XYCZT")
-
-    ij.IJ.run("Subtract Background...", "rolling=100");
+    
+    spec = strcat("rolling=",radius);
+    ij.IJ.run("Subtract Background...", spec);
     ij.IJ.run("Split Channels");
     
     for i=length(channels):-1:1
+        ij.IJ.resetMinAndMax()
         ij.IJ.saveAs("Tiff",fullfile(savepath,channels{i}))
         ij.IJ.run("Close");
     end
