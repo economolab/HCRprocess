@@ -31,8 +31,6 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     'sphinx.ext.napoleon',
-    # 'sphinxcontrib.autoprogram',
-    'sphinxarg.ext',
 ]
 
 templates_path = ["_templates"]
