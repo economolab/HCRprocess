@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "RN Connect"
+project = "RN connect"
 copyright = "2025, Economo Lab"
 author = "Jack Vincent"
 
