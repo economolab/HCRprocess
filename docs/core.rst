@@ -29,7 +29,10 @@ Select a file by clicking on it in the ``Fiducials`` table. Pressing ``Find fidu
 
 Once you have saved appropriate fiducials, select a file in the ``Registered`` table by clicking on it. Press ``Register this file`` to register only the currently selected file. Press ``Register all files`` to register all files that haven't yet been registered (only registers files for which fiducials exist).
 
-After files are stitched, saturated pixels are converted to black pixels. These are often found at the boundaries of the transformed image and are artifacts of the registration algorithm. 
+After files are registered, saturated pixels are converted to black pixels. These are often found at the boundaries of the transformed image and are artifacts of the registration algorithm. 
+
+.. note::
+    Registration is the longest running and most computationally intensive portion of the HCRprocess pipeline.   
 
 
 Finishing
