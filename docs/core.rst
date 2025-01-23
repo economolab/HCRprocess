@@ -32,7 +32,7 @@ Once you have saved appropriate fiducials, select a file in the ``Registered`` t
 After files are registered, saturated pixels are converted to black pixels. These are often found at the boundaries of the transformed image and are artifacts of the registration algorithm. 
 
 .. note::
-    Registration is the longest running and most computationally intensive portion of the HCRprocess pipeline.   
+    Registration is the slowest and most computationally/memory intensive portion of the HCRprocess pipeline.   
 
 
 Finishing
