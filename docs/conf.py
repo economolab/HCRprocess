@@ -26,11 +26,13 @@ author = "Jack Vincent"
 # -- General configuration
 
 extensions = [
-    "sphinx.ext.duration",
-    "sphinx.ext.doctest",
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.viewcode",
+    'sphinx.ext.napoleon',
+    # 'sphinxcontrib.autoprogram',
+    'sphinxarg.ext',
 ]
 
 intersphinx_mapping = {
