@@ -6,6 +6,6 @@ The ``Main`` tab is the central tab of HCRprocess from which all files in a roun
 .. image:: doc_assets/main GUI final.PNG
     :width: 1200px
     :align: center
-    :alt: fig1
+    :alt: main GUI
 
 
