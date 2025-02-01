@@ -235,7 +235,7 @@ h.bsWarp = uicontrol('Style', 'pushbutton',  'Units', 'normalized', 'Position', 
     {@bswarp_button_fcn,gcf});
 
 h.SavePts = uicontrol('Style', 'pushbutton',  'Units', 'normalized', 'Position', ...
-    [.895 0.04 0.1 .04], 'String', 'Save points','FontWeight','Bold', 'Callback', ...
+    [.895 0.06 0.1 .04], 'String', 'Save points','FontWeight','Bold', 'Callback', ...
     {@save_button_fcn,gcf});
 
 h.DeletePts = uicontrol('Style', 'pushbutton',  'Units', 'normalized', 'Position', ...
@@ -407,7 +407,7 @@ end
 name = split(name,'__');
 name = name{1};
 
-def_fn = [name '_Pts' '.mat'];
+def_fn = [name '_Pts_' date '.mat'];
 
 if ~exist(fullfile(pwd, 'PTS'), 'dir')
     mkdir(fullfile(pwd, 'PTS'));
@@ -428,39 +428,6 @@ h.MainApp.finish_fiducials()
 
 guidata(fig, h);
 close(fig)
-
-function save_button_fcn_close_req(~, ~, fig,outfile)
-h = guidata(fig);
-
-if numel(h.pts.fix)<3
-    disp('No points to save');
-    return;
-end
-
-[~,name,~] = fileparts(h.moving_fn);
-name = split(name,'__');
-name = name{1};
-
-def_fn = [name '_Pts' '.mat'];
-
-if ~exist(fullfile(pwd, 'PTS'), 'dir')
-    mkdir(fullfile(pwd, 'PTS'));
-end
-
-[filepath, ~, ~] = fileparts(h.moving_fn);
-[filepath, ~, ~] = fileparts(filepath);
-outfile = fullfile(filepath,"internal","fiducials",def_fn);
-
-d = h.pts;
-image_files = h.fn;
-fiximsz = size(h.fixed);
-
-disp(['Saving ' num2str(size(d.fix, 1)) ' points']);
-save(outfile, 'd', 'fiximsz', 'image_files');
-
-h.MainApp.finish_fiducials()
-
-guidata(fig, h);
 
 function load_fixed_button_fcn(fig, fixed_fn, fixed_reg_channel)
 load_button_helper(fig, fixed_fn,0,fixed_reg_channel)
@@ -2223,17 +2190,16 @@ set(temp, 'Units', currunit);
 pos = get(temp, 'position');
 delete(temp);
 
-function close_req(fig,~)
+function close_req(h,event)
 
 selection = questdlg('Save fiducials before closing?', ...
     'Close Request Function', ...
     'Yes','No','Yes'); 
 switch selection 
     case 'Yes'
-        save_button_fcn_close_req([],[],fig,[]);
         delete(gcf)
     case 'No'
-        delete(gcf) 
+        return 
 end
 
 

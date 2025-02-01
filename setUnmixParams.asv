@@ -28,7 +28,7 @@ set(h.fig, 'CloseRequestFcn', @close_req);
 
 fig = uifigure;
 d = uiprogressdlg(fig,'Title','Loading...', ...
-    'Message',strcat("Loading: ",inputf), ...
+    'Message',strcat("Loading: ",h.moving_fn), ...
     'Indeterminate','on');
 
 guidata(h.fig, h);
@@ -221,10 +221,6 @@ end
 if load_params == 1
     loadButtonFcn([],[],gcf)
 end
-
-close(d)
-pause(0.01)
-close(fig)
 
 
 function imFns = findImageFiles(parent, token)
@@ -426,40 +422,6 @@ params.lipocheck = get(h.lipo_checkbox, 'Value');
 save(savef, 'params');
 h.parentApp.finish_unmix_params()
 close(fig)
-
-function saveButtonFcn_close_req(~, ~, fig)
-
-h = guidata(fig);
-
-[filepath,~,~] = fileparts(h.parent);
-filepath = fullfile(filepath,'internal','uparams');
-[~,name,~] = fileparts(h.fn);
-savef = fullfile(filepath,strcat(name,'.mat'));
-
-params.str = cell(h.Nchans, 1);
-for i = 1:h.Nchans
-    params.str{i} = get(h.chanLabel_edit(i), 'String');
-end
-
-for i = 1:h.Nchans
-    params.clr{i}  = get(h.color_button(i), 'BackgroundColor');
-    params.cmin{i} = get(h.cmin_edit(i), 'String');
-    params.cmax{i} = get(h.cmax_edit(i), 'String');
-    params.autolim(i) = get(h.autolim(i), 'Value');
-    params.enable(i) = get(h.enable_checkbox(i), 'Value');
-end
-
-params.unmixDat = h.unmixTable.Data;
-params.shiftDat = h.shiftTable.Data;
-
-params.lpf = get(h.LPF_checkbox, 'Value');
-params.radius = get(h.radius_edit, 'String');
-
-params.lipo           = h.lipo;
-params.lipocheck = get(h.lipo_checkbox, 'Value');
-
-save(savef, 'params');
-h.parentApp.finish_unmix_params()
 
 
 function exportImageStack(~, ~, fig)
@@ -693,12 +655,12 @@ guidata(fig, h)
 
 function close_req(fig,~)
 
-selection = questdlg('Save unmix settings before closing?', ...
+selection = questdlg('Save fiducials before closing?', ...
     'Close Request Function', ...
     'Yes','No','Yes'); 
 switch selection 
     case 'Yes'
-        saveButtonFcn_close_req([],[],fig);
+        save_button_fcn_close_req([],[],fig,[]);
         delete(gcf)
     case 'No'
         delete(gcf) 
