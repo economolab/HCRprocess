@@ -16,11 +16,11 @@ The ``Main`` tab is the central tab of HCRprocess from which all files in a roun
 #. Experiment directory: Shows the current experiment directory as well as each round folder contained within the directory. Click on round folders to change the active round folder. Click ``Change Experiment Directory`` to change the experiment directory using a folder selection dialog box. 
 #. Processing pipelines: Switches which can enable and disable portions of the core and post-processing pipelines. The ``Core Processing Pipeline`` switches are round-specific. ``Stitching`` is a required operation before all subsequent operations, therefore it is permanently enabled for all rounds.
 #. Main functions:
-
+|
    * Registration Round: Set the registration round using a drop-down menu. This is the round that all other rounds will be registered to. That round's registration operation is automatically disabled, since there's no need to register a round to itself. Upon loading an experiment directory for the first time, HCRprocess will attempt to find the registration round by looking for a registration round token ('r1' by default). If it's unable to find it, this parameter must be set manually before carrying out registration operations. 
-
+|
    * Status Tables / Files Switch: Switch between displaying status tables and files. Status tables keep track of which operations have been completed, but if intermediate files are deleted these may not match the actual files found in the experiment directory. It is recommended to keep this switch set to ``Status Tables`` unless you are troubleshooting.
-
+|
    * DO ALL CORE: This button will attempt to perform all possible core operations for the current round folder for every file. If certain operations are impossible due to a lack of input files from previous operations or a lack of manual settings, those operations are skipped and logged in a cache which is reported once all operations have been completed. This cache is displayed in the console and lists every incomplete operation for every file. Check ``Redo all too?`` to do all operations for every file, even if they have already been completed. Not checking this box means operations that have already been completed will be skipped. 
-
+|
    * Memory Monitor: This button will launch a separate app which displays RAM usage by MATLAB as a percentage of allocated RAM. This app also contains a button for manual garbage collection. It is recommended to only use this app for troubleshooting. 
