@@ -6,7 +6,7 @@ Multiple operations in HCRprocess require manual intervention. These operations 
 Spectral Unmixing GUI
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-This GUI is called as part of the spectral unmixing operation. It is a GUI developed by Michael Economo for the purpose of manually setting parameters for linear unmixing of a multispectral image. 
+This GUI is called as part of the spectral unmixing operation. It is a GUI developed by Michael Economo for the purpose of manually setting parameters for linear unmixing of a multispectral image. See `this article from Nikon <https://www.microscopyu.com/techniques/confocal/spectral-imaging-and-linear-unmixing>` for a general overview of spectral imaging and linear unmixing. 
 
 Basic usage instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -30,6 +30,8 @@ Basic usage instructions
 
 Advanced usage instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
 
 .. image:: doc_assets/unmixing_examples_final.png
     :width: 800px
