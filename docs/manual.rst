@@ -1,12 +1,12 @@
 Manual GUIs
 ------------------------------
 
-Spectral Unmixing
+Spectral Unmixing GUI
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Finding Fiducials
+Finding Fiducials GUI
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Lipofuscin Removal
+Lipofuscin Removal GUI
 ~~~~~~~~~~~~~~~~~~~~~~~
 
