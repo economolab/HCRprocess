@@ -6,9 +6,14 @@ Stitching
 
 This tab is where image files are stitched using ImageJ's Stitching plugin. 
 
+.. image:: doc_assets/stitching_gui_final.png
+    :width: 800px
+    :align: center
+    :alt: main GUI
 
+#. Select a file by clicking on it in the ``Stitched`` table. 
 
-Select a file by clicking on it in the ``Stitched`` table. Press ``Stitch this file`` to stitch only the currently selected file. Press ``Stitch all files`` to stitch all files that haven't yet been stitched.
+#. Press ``Stitch this file`` to stitch only the currently selected file. Press ``Stitch all files`` to stitch all files that haven't yet been stitched.
 
 After files are stitched, z-planes composed of more than 50% blank pixels are deleted. These are often found at the start or end of a multi-z stack and are artifacts of the stitching algorithm. 
 
@@ -19,6 +24,8 @@ Spectral Unmixing
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 This tab is where image files are spectrally unmixed using a custom GUI developed by Michael Economo. Spectral unmixing is composed of two steps: setting the unmixing parameters (which must be done manually), and the actual unmixing of the files (which is done automatically). Unmix parameters must be set before the image is unmixed. 
+
+
 
 Select a file by clicking on it in the ``Unmix Parameters`` table. Pressing ``Set/edit unmixing parameters for this file`` will open a GUI where unmixing parameters for the currently selected file can be set. Previously saved unmix parameters are automatically loaded. They can be edited and resaved as many times as desired. 
 
