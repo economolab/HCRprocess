@@ -4,7 +4,11 @@ Core
 Stitching
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-This tab is where image files are stitched using ImageJ's Stitching plugin. Select a file by clicking on it in the ``Stitched`` table. Press ``Stitch this file`` to stitch only the currently selected file. Press ``Stitch all files`` to stitch all files that haven't yet been stitched.
+This tab is where image files are stitched using ImageJ's Stitching plugin. 
+
+
+
+Select a file by clicking on it in the ``Stitched`` table. Press ``Stitch this file`` to stitch only the currently selected file. Press ``Stitch all files`` to stitch all files that haven't yet been stitched.
 
 After files are stitched, z-planes composed of more than 50% blank pixels are deleted. These are often found at the start or end of a multi-z stack and are artifacts of the stitching algorithm. 
 
