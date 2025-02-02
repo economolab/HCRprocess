@@ -39,7 +39,7 @@ This tab is where image files are spectrally unmixed using a custom GUI develope
 #. Press ``Unmix this file`` to unmix only the currently selected file. Press ``Unmix all files`` to unmix all files that haven't yet been unmixed (only unmixes files for which unmixing parameters exist).
 
 .. note::
-    For detailed instructions on how to set unmixing parameters using the popup unmixing GUI, see :ref:`manual`. 
+    For detailed instructions on how to set unmixing parameters using the popup unmixing GUI, see :ref:`manual<Spectral Unmixing GUI>`. 
 
 Registration
 ~~~~~~~~~~~~~~~~~~~~~~~
