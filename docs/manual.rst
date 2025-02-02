@@ -31,6 +31,10 @@ Basic usage instructions
 Advanced usage instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. image:: doc_assets/unmixing_examples_final.png
+    :width: 800px
+    :align: center
+    :alt: unmixing manual GUI
 
 
 Finding Fiducials GUI
