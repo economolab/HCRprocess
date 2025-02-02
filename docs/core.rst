@@ -1,5 +1,7 @@
-Core
+Core Pipeline
 ------------------------------
+
+Operations in the core pipeline must be carried out for every round of HCR captured and can be generally thought of as pre-processing steps.
 
 Stitching
 ~~~~~~~~~~~~~~~~~~~~~~~
