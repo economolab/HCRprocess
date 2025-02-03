@@ -62,5 +62,21 @@ Note the double underscores separating both the unique identifier from channels 
 
 * = ignored by automatic file detection
 
-  
+``HCRprocess`` can also autodetect and process histology image files. First add a histology subdirectory in the experiment folder using the following formatting:
+
+YYYY-MM-DD_histo
+
+The ``histo`` tag is required for HCRprocess to recognize the folder as a histology folder. Within the histology folder, place your image files in the following format:
+
+REGION#__fluorophore1chan#_fluorophore2chan#_fluorophore3chan#__histo-extra-info
+
+Examples: 
+
+.. code-block::
+
+   MC2__dTomTRITC_NTCy5__histo.vsi
+   SC5__eGFPFITC_dTomTRITC_NTCy5__histo-10x.vsi
+   FN1__eGFPFITC_NTCy5__histo.nd2
+
+Make sure a single underscore separates each channel, and that channels are listed in the order they appear in the file (the order in which they are acquired). The ``histo`` tag is required for HCRprocess to recognize a file as a histology image file that requires processing. Currently ``HCRprocess`` can automatically recognize and process histology image files of the following formats: vsi, nd2. 
 
