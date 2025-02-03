@@ -1,4 +1,4 @@
-Formatting Inputs
+Input Files
 ------------------------------
 
 Create an experiment directory in the following format:
