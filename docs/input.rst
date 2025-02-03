@@ -32,6 +32,7 @@ UNIQUE-ID__gene1chan#_gene2chan#_gene3chan#_gene4chan#__HCR-EXTRA-INFO
 Examples:
 
 .. code-block::
+
    s04__eGFP488_dTom546_NT647__HCR-40x.nd2
    s03-left__Phox2b594_Snap25488_Calb1546_Slc32a1647__HCR-40x-zstack.nd2
    s01-ant__Phox2b594_Snap25488_Calb1546_Slc32a1647__HCR.nd2
