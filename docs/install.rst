@@ -3,7 +3,7 @@ Installation
 
 `Install MATLAB <https://www.mathworks.com/help/install/ug/install-products-with-internet-connection.html>`_
 
-Clone this repository and run ``HCRprocess.mlapp``
+Clone the `Github repository <https://github.com/economolab/HCRprocess>`_ and run ``HCRprocess.mlapp``
 
 ImageJ in MATLAB
 ~~~~~~~~~~~~~~~~~~~~~~~
