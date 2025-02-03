@@ -13,15 +13,18 @@ Examples:
    2023-06-08_MC-SC-5
 
 Create a subdirectory within this folder for each round (pre-imaging round number is 0) in the following format:
-```
+
 YYYY-MM-DD_r#_HCR
 
 Examples:
-2024-12-23_r1_HCR
-2025-01-06_r0_HCR
-2023-06-14_r2_HCR
-```
-The ``HCR`` tag is required for HCRprocess to recognize the folder as a round folder. Within each round folder, place your nd2 files inside it in the following format:
+
+.. code-block:: python
+
+   2024-12-23_r1_HCR
+   2025-01-06_r0_HCR
+   2023-06-14_r2_HCR
+
+The ``HCR`` tag is required for HCRprocess to recognize the folder as a round folder. Within each round folder, place your nd2 files inside it in the following format: 
 ```
 UNIQUE-ID__gene1chan#_gene2chan#_gene3chan#_gene4chan##__HCR_EXTRA-INFO
 
