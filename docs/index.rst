@@ -18,7 +18,7 @@ HCRprocess is an HCR-mFISH image processing pipeline written in MATLAB and Pytho
 
 .. toctree::
    :maxdepth: 3
-   :caption: Usage
+   :caption: Usage:
 
    main
    core
