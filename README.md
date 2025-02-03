@@ -1,20 +1,21 @@
-<img src="docs/doc_assets/beauty_HCR.png" align="right" width="500">
+<img src="docs/doc_assets/beauty_HCR.png" align="right" width="200">
+
 HCRprocess is an [HCR-mFISH](https://journals.biologists.com/dev/article/145/12/dev165753/48466/Third-generation-in-situ-hybridization-chain) image processing pipeline written in MATLAB and Python 3 by Jack Vincent. It is composed of components developed by Jack Vincent, Michael Economo, and Will Cunningham.   
 
 For detailed documentation including a quickstart guide with installation instructions, see ⭐[**hcrprocess.readthedocs.io**](https://hcrprocess.readthedocs.io/en/latest/)⭐.
 
 
 
-# TODO
+# Version history
 
-1) Add user guide
-2) lipo gone
-3) turn on and off blocks of processing pipeline
-4) cellpose 3 model training and implementation
-5) Batch registration
-6) do all button
-8) memory usage reduction and clearing
-9) separate back end from gui for reg and unmix, run with progress dialog box
-10) delete intermediates
-11) delete or properly store files created by registration
-12) fix tiff writing in MATLAB (and tiff reading, need dedicated functions for both that are called for everything, currently using hacky solution of reopening and writing in imagej for all writes, we already have write while incrementing ifd functionality, just need read while incrementing ifd functionality)
+## Alpha 0.0 (2/3/2025)
+
+### Major features
+
+1) Core processing pipeline functionality
+2) 
+
+
+
+
+# TO-DO
