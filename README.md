@@ -1,6 +1,6 @@
 HCRprocess is an HCR-mFISH image processing pipeline written in MATLAB and Python 3 by Jack Vincent. It is composed of components developed by Jack Vincent, Michael Economo, and Will Cunningham.   
 
-![HCR example](doc_assets/beauty_HCR.png)
+![HCR example](HCRprocess/doc_assets/beauty_HCR.png)
 
 # TODO
 
