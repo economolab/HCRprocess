@@ -1,6 +1,9 @@
 Input Files
 ------------------------------
 
+HCR Files
+~~~~~~~~~~~~~~~~~~~~~~~
+
 Create an experiment directory in the following format:
 
 YYYY-MM-DD_EXPERIMENT
@@ -61,6 +64,9 @@ Note the double underscores separating both the unique identifier from channels 
    |  |  s02__Nr4a2594_Snap25488_Zfhx4546_Ebf3647__HCR-40x.nd2
 
 * = ignored by automatic file detection
+
+Histology Files
+~~~~~~~~~~~~~~~~~~~~~~~
 
 ``HCRprocess`` can also autodetect and process histology image files. First add a histology subdirectory in the experiment folder using the following formatting:
 
