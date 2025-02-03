@@ -8,6 +8,7 @@ YYYY-MM-DD_EXPERIMENT
 Examples:
 
 .. code-block::
+
    2024-12-20_FN-SNR-8
    2025-01-06_XII-2
    2023-06-08_MC-SC-5
@@ -18,7 +19,7 @@ YYYY-MM-DD_r#_HCR
 
 Examples:
 
-.. code-block:: python
+.. code-block:: 
 
    2024-12-23_r1_HCR
    2025-01-06_r0_HCR
