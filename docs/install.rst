@@ -5,7 +5,10 @@ Installation
 
 Clone this repository and run ``HCRprocess.mlapp``
 
-ImageJ in MATLAB: Required for stitching and final processing
+ImageJ in MATLAB
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Required for stitching and final processing
 
 `Install Fiji <https://imagej.net/software/fiji/downloads>`_
 
@@ -15,7 +18,10 @@ ImageJ in MATLAB: Required for stitching and final processing
 
 Set ``fijiSciptsDir`` in ``params.m`` to the correct Fiji scripts directory on your system. If you don't know where this is, you can use ``File -> Show Folder -> ImageJ`` in Fiji. 
 
-Python in MATLAB: Required for registration and segmentation
+Python in MATLAB
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Required for registration and segmentation
 
 `Install Anaconda Distribution <https://docs.anaconda.com/anaconda/install/>`_
 
