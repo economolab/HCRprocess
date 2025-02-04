@@ -47,6 +47,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 master_doc = "index"
 
 # -- Options for HTML output -------------------------------------------------
+html_logo = 'doc_assets/logo/HCRprocess_logo.ico'
+html_favicon = 'doc_assets/logo/HCRprocess_logo.ico'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
