@@ -8,14 +8,24 @@ For detailed documentation including a quickstart guide with installation instru
 
 # Version history
 
-## Alpha 0.0 (2/3/2025)
+## Alpha v0.1 (2/3/2025)
 
 ### Major features
 
 1) Core processing pipeline functionality
-2) 
-
-
-
+2) Flexible round-specific pipelines
+3) Manual, batch, and fully automated operation
+4) Stitching, spectral unmixing, registration, finishing, and histology functions
+5) Flexible registration round setting
+6) Togglable automatic file deletion to save disk space
+7) Visual status tables
+8) Preliminary error handling and reporting
+9) And more!
 
 # TO-DO
+
+1) Post-processing functionality including lipofuscin removalcell segmentation, and ccf registration
+2) Bug fixing
+3) QOL improvements to manual GUIs
+4) Speed and memory improvements
+5) Refactoring for readability and scalability 
