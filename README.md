@@ -24,7 +24,7 @@ For detailed documentation including a quickstart guide with installation instru
 
 # TO-DO
 
-1) Post-processing functionality including lipofuscin removalcell segmentation, and ccf registration
+1) Post-processing functionality including lipofuscin removal, cell segmentation, and ccf registration
 2) Bug fixing
 3) QOL improvements to manual GUIs
 4) Speed and memory improvements
