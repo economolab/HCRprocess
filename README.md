@@ -16,7 +16,7 @@ For detailed documentation including a quickstart guide with installation instru
 2) Flexible round-specific pipelines
 3) Manual, batch, and fully automated operation
 4) Stitching, spectral unmixing, registration, finishing, and histology functions
-5) Flexible registration round setting
+5) Flexible setting of a registration round
 6) Togglable automatic file deletion to save disk space
 7) Visual status tables
 8) Preliminary error handling and reporting
@@ -28,4 +28,6 @@ For detailed documentation including a quickstart guide with installation instru
 2) Bug fixing
 3) QOL improvements to manual GUIs
 4) Speed and memory improvements
-5) Refactoring for readability and scalability 
+5) Refactoring for readability and scalability
+6) Operation logging
+7) Metadata integration and reorganization 
