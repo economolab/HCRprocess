@@ -693,15 +693,26 @@ guidata(fig, h)
 
 function close_req(fig,~)
 
-selection = questdlg('Save unmix settings before closing?', ...
-    'Close Request Function', ...
-    'Yes','No','Yes'); 
-switch selection 
-    case 'Yes'
-        saveButtonFcn_close_req([],[],fig);
-        delete(gcf)
-    case 'No'
-        delete(gcf) 
+h = guidata(fig);
+
+if ~strcmp(h.mode,'write')
+
+    selection = questdlg('Save unmix settings before closing?', ...
+        'Close Request Function', ...
+        'Yes','No','Yes'); 
+    
+    switch selection 
+        case 'Yes'
+            saveButtonFcn_close_req([],[],fig);
+            delete(fig)
+        case 'No'
+            delete(fig) 
+    end
+
+else
+    
+    delete(fig)
+    
 end
 
 
