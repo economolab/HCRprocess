@@ -1,4 +1,4 @@
-function process_final(file, radius)
+function process_final(file, subBG, radius)
    
     [filepath,name,ext] = fileparts(file);
     orig_file = strcat(name,ext);
@@ -36,16 +36,25 @@ function process_final(file, radius)
         "stack_order=XYCZT")
     
     spec = strcat("rolling=",radius);
-    ij.IJ.run("Subtract Background...", spec);
+
+    if subBG == 1
+        ij.IJ.run("Subtract Background...", spec);
+    end
+    
     ij.IJ.run("Split Channels");
+    pause(1)
     
     for i=length(channels):-1:1
         ij.IJ.resetMinAndMax()
+        pause(1)
         ij.IJ.saveAs("Tiff",fullfile(savepath,channels{i}))
+        pause(1)
         ij.IJ.run("Close");
+        pause(1)
     end
 
     ij.IJ.run("Quit","");
+    pause(10)
 
     java.lang.Runtime.getRuntime.gc;
 
