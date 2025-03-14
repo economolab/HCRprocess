@@ -15,7 +15,8 @@ bgROI = createMask(h.bgROI);
 for i = 1:h.Nchans
     tmp = h.stack(:,:, i);
     h.lipo.bg(i) = median(tmp(bgROI));
-    h.lipo.amp(i) = h.stack(y, x, i)-h.lipo.bg(i);
+    % h.lipo.amp(i) = h.stack(y, x, i)-h.lipo.bg(i);
+    h.lipo.amp(i) = h.stack(y, x, i);
     
 end
 h.lipo.amp(h.lipo.amp<0) = 0;

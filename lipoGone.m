@@ -1,20 +1,28 @@
-function setUnmixParams(inputf,parentApp, mode,load_params)
+% function lipoGone(inputf,parentApp, mode,load_params)
+% 
+% parent_directory = pwd;
+% addpath(genpath(fullfile(parent_directory, 'utils')));
+% 
+% initFig(inputf, parentApp,mode,load_params);
+
+function lipoGone()
+clc; close all
 
 parent_directory = pwd;
 addpath(genpath(fullfile(parent_directory, 'utils')));
 
-initFig(inputf, parentApp,mode,load_params);
+autoload = 0;
+initFig(autoload);
 
+function initFig(autoload)
 
+if autoload
+    % h.parent = ;
+    h.fn = 'MAX_R1_77_s03pos_GFP488_Snap25594_Trhr647_Nr2f2546_Zeb2514_20X_IRN.tif';
+else
+    [h.fn, h.parent] = uigetfile('*.tif;*.tiff','Select file',pwd);
+end
 
-
-function initFig(inputf, parentApp,mode,load_params)
-
-h.mode = mode;
-h.parentApp = parentApp;
-[filepath,name,ext] = fileparts(inputf);
-h.parent = filepath;
-h.fn = strcat(name,ext);
 autoload = 1;
 
 bcol = [1 1 1];
@@ -24,12 +32,6 @@ h.fig = figure(427);
 h.ax = axes();
 
 set(h.fig, 'Units', 'pixels', 'Position', [100 100 1800 850], 'Color', bcol);
-set(h.fig, 'CloseRequestFcn', @close_req);
-
-fig = uifigure;
-d = uiprogressdlg(fig,'Title','Loading...', ...
-    'Message',strcat("Loading: ",inputf), ...
-    'Indeterminate','on');
 
 guidata(h.fig, h);
 loadTifStack(h.fig)
@@ -137,17 +139,15 @@ h.unmixTable = uitable(h.fig, 'Units', 'Normalized', 'Position', [0.59 0.475 0.2
     'Offset', 'Scale', 'Enable'}, 'Data', data, 'ColumnEditable', [true, true, true, true, true]);
 
 uicontrol('Style', 'text', 'Units', 'Normalized', 'String', 'Lipo Table', ...
-    'BackgroundColor',bcol-0.1,'Position',[0.59 0.445 0.135, 0.025],'HorizontalAlignment','Center', ...
+    'BackgroundColor',bcol-0.1,'Position',[0.59 0.44 0.225, 0.025],'HorizontalAlignment','Center', ...
     'FontSize', 12, 'FontWeight', 'Bold');
 
-data = cell(10, 5);
+data = cell(10, 2);
 data(:,:) = {0};
 data(:,2) = {true};
 
 h.lipoTable = uitable(h.fig, 'Units', 'Normalized', 'Position', [0.59 0.3 0.225 0.135], ...
     'ColumnWidth', {80, 80}, 'ColumnName', {'Scale', 'Enable'}, 'Data', data, 'ColumnEditable', [true, true]);
-
-
 
 uicontrol('Style', 'text', 'Units', 'Normalized', 'String', 'Image shifts', ...
     'BackgroundColor',bcol-0.1,'Position',[0.68 0.1 0.135, 0.025],'HorizontalAlignment','Center', ...
@@ -211,6 +211,10 @@ h.updateImage_button = uicontrol('Style', 'pushbutton',  'Units', 'Normalized', 
     [0.82 0.2 0.16 0.05], 'String', 'Update Image','FontWeight','Bold', 'Callback', ...
     {@getImageStack,gcf});
 
+h.tempExport_button = uicontrol('Style', 'pushbutton',  'Units', 'Normalized', 'Position', ...
+    [0.6 0.2 0.16 0.05], 'String', 'temp save','FontWeight','Bold', 'Callback', ...
+    {@exportImageStack,gcf});
+
 h.bgROI = images.roi.Rectangle(h.ax,'Position',[100 100 25 25], 'LineWidth', 3, 'Visible', 'Off');
 h.lipoCrosshair = drawcrosshair('Parent', h.ax, 'Position', [50, 50], 'Visible', 'Off');
 
@@ -219,22 +223,6 @@ imFns = findImageFiles(h.parent, '.tif');
 
 guidata(h.fig, h);
 updateImage([], [], h.fig);
-
-if strcmp(h.mode,'write')
-    loadButtonFcn([],[],gcf)
-    getImageStack([],[],gcf)
-    exportImageStack([],[],gcf)
-    h.parentApp.finish_unmix()
-    close(h.fig)
-end
-
-if load_params == 1
-    loadButtonFcn([],[],gcf)
-end
-
-close(d)
-pause(0.01)
-close(fig)
 
 
 function imFns = findImageFiles(parent, token)
@@ -476,9 +464,13 @@ function exportImageStack(~, ~, fig)
 h = guidata(fig);
 
 [filepath,~,~] = fileparts(h.parent);
-filepath = fullfile(filepath,'unmix');
 [~,name,~] = fileparts(h.fn);
-savef = fullfile(filepath,strcat(name,'.tif'));
+savef = fullfile(filepath,strcat(name,'-unmix','.tif'));
+
+% [filepath,~,~] = fileparts(h.parent);
+% filepath = fullfile(filepath,'unmix');
+% [~,name,~] = fileparts(h.fn);
+% savef = fullfile(filepath,strcat(name,'.tif'));
 
 t = Tiff(savef, 'w8');
 tagstruct.ImageLength = h.Nrow;
@@ -708,17 +700,22 @@ if get(h.lipo_checkbox, 'Value')
 
     % set negative pixels equal to 0
     bgim(bgim<0) = 0;
+    bgim(isnan(bgim)) = 0;
     
     % iterate through channels
     for i = 1:numel(h.lipo.targetchans)
         chan = h.lipo.targetchans(i);
+
+        bg_tosub = bgim .* bg(:,:,chan);
+
+        bg_tosub = bg_tosub.*h.lipoTable.Data{chan,1};
         
         % scale background image by lipofuscin intensity
         % bg = bgim.*h.lipo.amp(chan);
         
-        lipo = bgim .* bg(:,:,i);
-        newim = h.stack(:,:,chan) - lipo;
-        newim(isnan(newim)) = 0;
+        % lipo = bgim .* bg(:,:,i);
+        % newim = h.stack(:,:,chan) - lipo;
+        % newim(isnan(newim)) = 0;
 
         % deltaF = (h.stack(:,:,chan) - bg(:,:,i)) ./ bg(:,:,i);
         % deltaF = deltaF - bgim;
@@ -728,37 +725,17 @@ if get(h.lipo_checkbox, 'Value')
         % newim(isnan(newim)) = 0;
 
         % subtract from image
-        % newstack(:,:,chan) = h.stack(:,:,chan) - bg;
+        newim = h.stack(:,:,chan) - bg_tosub;
+        newim(newim < 0) = 0;
+        newim(isnan(newim)) = 0;
         newstack(:,:,chan) = newim;
+        % newstack(:,:,chan) = newim;
         
     end
 end
 h.stack = newstack;
 guidata(fig, h)
 
-function close_req(fig,~)
-
-h = guidata(fig);
-
-if ~strcmp(h.mode,'write')
-
-    selection = questdlg('Save unmix settings before closing?', ...
-        'Close Request Function', ...
-        'Yes','No','Yes'); 
-    
-    switch selection 
-        case 'Yes'
-            saveButtonFcn_close_req([],[],fig);
-            delete(fig)
-        case 'No'
-            delete(fig) 
-    end
-
-else
-    
-    delete(fig)
-    
-end
 
 
 

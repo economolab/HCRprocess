@@ -136,19 +136,27 @@ h.unmixTable = uitable(h.fig, 'Units', 'Normalized', 'Position', [0.59 0.475 0.2
     'ColumnWidth', {80, 80, 70, 70, 70}, 'ColumnName', {'Unmix from', 'Unmix to', ...
     'Offset', 'Scale', 'Enable'}, 'Data', data, 'ColumnEditable', [true, true, true, true, true]);
 
+uicontrol('Style', 'text', 'Units', 'Normalized', 'String', 'Lipo Table', ...
+    'BackgroundColor',bcol-0.1,'Position',[0.59 0.44 0.225, 0.025],'HorizontalAlignment','Center', ...
+    'FontSize', 12, 'FontWeight', 'Bold');
 
+data = cell(10, 2);
+data(:,:) = {0};
+data(:,2) = {true};
+
+h.lipoTable = uitable(h.fig, 'Units', 'Normalized', 'Position', [0.59 0.3 0.225 0.135], ...
+    'ColumnWidth', {80, 80}, 'ColumnName', {'Scale', 'Enable'}, 'Data', data, 'ColumnEditable', [true, true]);
 
 uicontrol('Style', 'text', 'Units', 'Normalized', 'String', 'Image shifts', ...
-    'BackgroundColor',bcol-0.1,'Position',[0.68 0.425 0.135, 0.025],'HorizontalAlignment','Center', ...
+    'BackgroundColor',bcol-0.1,'Position',[0.68 0.1 0.135, 0.025],'HorizontalAlignment','Center', ...
     'FontSize', 12, 'FontWeight', 'Bold');
 
 data = cell(5, 3);
 data(1,:) = {1, 0, 0};
 
-h.shiftTable = uitable(h.fig, 'Units', 'Normalized', 'Position', [0.68 0.29 0.135 0.135], ...
+h.shiftTable = uitable(h.fig, 'Units', 'Normalized', 'Position', [0.68 0.12 0.135 0.135], ...
     'ColumnWidth', {70, 70, 70}, 'ColumnName', {'Channel', 'X shift', ...
     'Yshift'}, 'Data', data, 'ColumnEditable', [true, true, true]);
-
 
 h.opts_pan = uipanel('Title','Options', 'FontSize',12, 'Units', 'Normalized', ...
     'BackgroundColor',pcol, 'Position',[0.82 0.26 0.16 0.375]);
@@ -672,20 +680,60 @@ if get(h.lipo_checkbox, 'Value')
     h.lipo.targetchans = str2num(get(h.liporemovechans_edit, 'String'));
 
     lim = zeros(size(h.stack, 1), size(h.stack, 2), numel(h.lipo.modelchans));
-    for i = 1:numel(h.lipo.modelchans)
-        amp = h.lipo.amp(h.lipo.modelchans(i));
-        bg = h.lipo.bg(h.lipo.modelchans(i));
-
-        lim(:,:,i) = (h.stack(:,:,h.lipo.modelchans(i)) - bg)./amp;  %lipo has amplitude of 1
-    end
-    bgim = min(lim, [], 3);
-    bgim(bgim<0) = 0;
     
+    bg = pyrunfile("estimateBackground.py","background",data=h.stack(:,:,h.lipo.modelchans));
+    bg = double(bg);
+
+    % iterate through channels
+    for i = 1:numel(h.lipo.modelchans)
+
+        % the pixel intensity of the lipo crosshairs minus the background
+        % pixel intensity (bg is subtracted in getLipoParams)
+        amp = h.lipo.amp(h.lipo.modelchans(i));
+        
+        % the median pixel intensity in the background window
+        % bg = h.lipo.bg(h.lipo.modelchans(i));
+        
+        % intensity of each pixel relative to lipofuscin (lipofuscin pixels 
+        % should have an amplitude of 1) 
+        % lim(:,:,i) = (h.stack(:,:,h.lipo.modelchans(i)) - bg(:,:,i)) ./ (amp - bg(:,:,i));
+        lim(:,:,i) = (h.stack(:,:,h.lipo.modelchans(i)) - bg(:,:,i)) ./ bg(:,:,i);
+
+    end
+    
+    % set each pixel in lim to its minimum value across all channels
+    bgim = min(lim, [], 3);
+
+    % set negative pixels equal to 0
+    bgim(bgim<0) = 0;
+    bgim(isnan(bgim)) = 0;
+    
+    % iterate through channels
     for i = 1:numel(h.lipo.targetchans)
         chan = h.lipo.targetchans(i);
+
+        bg_tosub = bgim .* bg(:,:,chan);
+
+        bg_tosub = bg_tosub.*h.lipoTable.Data{chan,1};
         
-        bg = bgim.*h.lipo.amp(chan);
-        newstack(:,:,chan) = h.stack(:,:,chan) - bg;
+        % scale background image by lipofuscin intensity
+        % bg = bgim.*h.lipo.amp(chan);
+        
+        % lipo = bgim .* bg(:,:,i);
+        % newim = h.stack(:,:,chan) - lipo;
+        % newim(isnan(newim)) = 0;
+
+        % deltaF = (h.stack(:,:,chan) - bg(:,:,i)) ./ bg(:,:,i);
+        % deltaF = deltaF - bgim;
+        % deltaF(deltaF < 0) = 0;
+        % newim = deltaF .* bg(:,:,i);
+        % newim = newim + bg(:,:,i);
+        % newim(isnan(newim)) = 0;
+
+        % subtract from image
+        newstack(:,:,chan) = h.stack(:,:,chan) - bg_tosub;
+        % newstack(:,:,chan) = newim;
+        
     end
 end
 h.stack = newstack;
