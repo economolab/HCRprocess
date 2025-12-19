@@ -104,15 +104,15 @@ for i, intensity_image_file in tqdm(enumerate(intensity_image_files)):
                                        voxel_size=(325, 325), 
                                        spot_radius=(325, 325))
         
-        # spots_post_decomposition, dense_regions, reference_spot = detection.decompose_dense(
-        #     intensity_image[:,:,j],
-        #     spots=spots,
-        #     voxel_size = (325, 325),
-        #     spot_radius = (325, 325))
+        spots_post_decomposition, dense_regions, reference_spot = detection.decompose_dense(
+            intensity_image[:,:,j],
+            spots=spots,
+            voxel_size = (325, 325),
+            spot_radius = (325, 325))
         
         spots_mask = np.zeros(np.shape(intensity_image[:,:,j]), dtype=bool)
-        # for spot in spots_post_decomposition:
-        for spot in spots:
+        for spot in spots_post_decomposition:
+        # for spot in spots:
             spots_mask[spot[0], spot[1]] = True
             
         label_spots = spots_mask * label_image[:,:,j]
@@ -212,7 +212,7 @@ genes_dict["cell_id"] = cell_ids
 gene_df = pd.DataFrame(genes_dict)
 gene_df = gene_df[preserve_label]
 
-gene_df.to_csv(uniq_id + "_df.csv", index=False)
+gene_df.to_csv(uniq_id + "_spots_df.csv", index=False)
 
 # %%
 

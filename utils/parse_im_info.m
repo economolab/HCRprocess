@@ -20,8 +20,8 @@ function [chans, planes, info] = parse_im_info(path)
         tok = regexp(id, 'frames=(\d*)', 'tokens');
     end
     if isempty(tok)
-        disp('Could not read number of z planes in tif.  Assuming 1 plane');
-        planes = 1;
+        disp('Could not read number of z planes in tif.  Assuming planes = number of IFDs');
+        planes = length(info);
     else
         planes = str2double(tok{1}{1});
     end

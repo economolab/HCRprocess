@@ -13,7 +13,7 @@ function [im, info] = read_tiff(path,targetChan)
 
     [chans, planes, info] = parse_im_info(path);
     
-    % single IFD for the whole image, saved by ImageJ
+    % single IFD for the whole image, saved by ImageJ as big TIFF
     if length(info) == 1
 
         im = tiffreadVolume(path);
@@ -21,7 +21,7 @@ function [im, info] = read_tiff(path,targetChan)
         im = reshape(im, sz(1), sz(2), chans, planes);
 
     % IFD for every plane, saved by MATLAB
-    else
+    elseif length(info) == planes
 
         im = zeros(info(1).Height,info(1).Width,chans,planes);
         warning('off','imageio:tiffutils:libtiffWarning')
@@ -35,6 +35,28 @@ function [im, info] = read_tiff(path,targetChan)
             % increment directory, unless you've just loaded the last plane
             if i < planes
                 nextDirectory(t)
+            end
+
+        end
+    
+    % IFD for every plane and channel, saved by ImageJ as regular TIFF
+    elseif length(info) == planes * chans
+        
+        im = zeros(info(1).Height,info(1).Width,chans,planes);
+        warning('off','imageio:tiffutils:libtiffWarning')
+        t = Tiff(path,"r");
+
+        % read 1 plane at a time
+        for i=1:planes
+            for j=1:chans
+            
+                im(:,:,j,i) = read(t);
+    
+                % increment directory, unless you've just loaded the last
+                % plane and last channel
+                if not(i == planes & j == chans)
+                    nextDirectory(t)
+                end
             end
 
         end

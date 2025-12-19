@@ -2,10 +2,10 @@ import numpy as np
 import math
 from scipy.ndimage import zoom
 from scipy.ndimage import uniform_filter,minimum_filter
-# from tqdm import tqdm
+from tqdm import tqdm
 import scipy.ndimage as ndi
 from skimage.measure import block_reduce
-from tqdm.notebook import tqdm_notebook as tqdm
+# from tqdm.notebook import tqdm_notebook as tqdm
 def normalize_local_contrast(image, blockRadiusX, blockRadiusY, meanFactor, center, stretch):
     image_original = np.float32(image)
     if image.ndim == 2:

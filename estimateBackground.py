@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Use photutils to estimate the background of a 2D grayscale or 3D multichannel image.
+Use photutils to estimate the background of a 2D grayscale, 3D multichannel image,
+or 3D single-channel multi-Z image.
 Background is estimated using the sigma-clipped median in each box of a grid 
 that covers the input data to create a low-resolution background map.
 """
@@ -15,7 +16,7 @@ def estimateBackground(data):
 
     if data.ndim < 2 or data.ndim > 3:
         raise ValueError(
-            "Input image must be either 2D for a single channel, or 3D for multichannel")
+            "Input image must be either 2D for a single channel, or 3D for multichannel/multi-Z")
 
     if data.ndim == 2:
         data = np.expand_dims(data, axis=2)

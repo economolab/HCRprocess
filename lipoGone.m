@@ -706,7 +706,7 @@ if get(h.lipo_checkbox, 'Value')
     for i = 1:numel(h.lipo.targetchans)
         chan = h.lipo.targetchans(i);
 
-        bg_tosub = bgim .* bg(:,:,chan);
+        bg_tosub = bgim .* bg(:,:,i);
 
         bg_tosub = bg_tosub.*h.lipoTable.Data{chan,1};
         
@@ -724,7 +724,7 @@ if get(h.lipo_checkbox, 'Value')
         % newim = newim + bg(:,:,i);
         % newim(isnan(newim)) = 0;
 
-        % subtract from image
+        % subtract from image10
         newim = h.stack(:,:,chan) - bg_tosub;
         newim(newim < 0) = 0;
         newim(isnan(newim)) = 0;
