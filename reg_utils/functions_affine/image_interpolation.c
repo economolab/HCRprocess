@@ -239,6 +239,29 @@ double interpolate_2d_nearest_gray(double Tlocalx, double Tlocaly, int *Isize, d
     return Ipixel;
 }
 
+double interpolate_3d_nearest_gray(double Tlocalx, double Tlocaly, double Tlocalz, int* Isize, double* Iin) {
+    /*  Linear interpolation variables */
+    int xBas0, yBas0, zBas0;
+    double Ipixel;
+
+    /*  Rounded location  */
+    double fTlocalx, fTlocaly, fTlocalz;
+
+    /* Determine the coordinates of the pixel(s) which will be come the current pixel */
+    /* (using linear interpolation) */
+    fTlocalx = floor(Tlocalx + 0.5); fTlocaly = floor(Tlocaly + 0.5); fTlocalz = floor(Tlocalz + 0.5);
+    xBas0 = (int)fTlocalx; yBas0 = (int)fTlocaly; zBas0 = (int)fTlocalz;
+
+    if (xBas0 < 0) { xBas0 = 0; }
+    if (yBas0 < 0) { yBas0 = 0; }
+    if (zBas0 < 0) { zBas0 = 0; }
+    if (xBas0 > (Isize[0] - 1)) { xBas0 = Isize[0] - 1; }
+    if (yBas0 > (Isize[1] - 1)) { yBas0 = Isize[1] - 1; }
+    if (zBas0 > (Isize[2] - 1)) { zBas0 = Isize[2] - 1; }
+
+    Ipixel = getcolor_mindex3(xBas0, yBas0, zBas0, Isize[0], Isize[1], Isize[2], Iin);
+    return Ipixel;
+}
 
 double interpolate_2d_linear_gray(double Tlocalx, double Tlocaly, int *Isize, double *Iin) {
     /*  Linear interpolation variables */
@@ -1147,8 +1170,8 @@ double interpolate_3d_double_gray(double Tlocalx, double Tlocaly, double Tlocalz
         else { Ipixel=interpolate_3d_cubic(Tlocalx, Tlocaly, Tlocalz, Isize, Iin);}
     }
     else {
-        if(black) { Ipixel=interpolate_3d_linear_black(Tlocalx, Tlocaly, Tlocalz, Isize, Iin);}
-        else { Ipixel=interpolate_3d_linear(Tlocalx, Tlocaly, Tlocalz, Isize, Iin);}
+        if(black) { Ipixel=interpolate_3d_nearest_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin);}
+        else { Ipixel=interpolate_3d_nearest_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin);}
     }
     return Ipixel;
 }
