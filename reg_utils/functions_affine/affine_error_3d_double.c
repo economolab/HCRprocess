@@ -16,7 +16,7 @@ voidthread transformvolume_gradient(double **Args) {
     int x, y, z;
     double *Nthreadsd;
     int Nthreads;
-    bool black, cubic;
+    bool black, cubic, nn;
     int mode=0;
     
     /* Location of pixel which will be come the current pixel */
@@ -74,8 +74,8 @@ voidthread transformvolume_gradient(double **Args) {
     moded=Args[8]; mode=(int)moded[0];
 
     if(mode==0||mode==2){ black = false; } else { black = true; }
-    if(mode==0||mode==1){ cubic = false; } else { cubic = true; }
-    
+    if(mode==0||mode==1||mode==4){ cubic = false; } else { cubic = true; }
+    if (mode == 4){ nn = true; } else { nn = false; }
     
     /* Make gradient matrix */
     for (p=0; p<16; p++)  { B[p]=A[p]+delta; }
@@ -133,7 +133,7 @@ voidthread transformvolume_gradient(double **Args) {
                     }
 
                     
-                    I=interpolate_3d_double_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin, cubic, black);
+                    I=interpolate_3d_double_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin, cubic, black, nn);
                     
                     /* Calculate squared difference */
                     sqd[i]+=(I-Iin2[indexI])*(I-Iin2[indexI]);
@@ -159,7 +159,7 @@ voidthread transformvolume_error(double **Args) {
     int x, y, z;
     double *Nthreadsd;
     int Nthreads;
-    bool black, cubic;
+    bool black, cubic, nn;
     int mode=0;
     
     /* Location of pixel which will be come the current pixel */
@@ -200,7 +200,8 @@ voidthread transformvolume_error(double **Args) {
     moded=Args[8]; mode=(int)moded[0];
 
     if(mode==0||mode==2){ black = false; } else { black = true; }
-    if(mode==0||mode==1){ cubic = false; } else { cubic = true; }
+    if(mode==0||mode==1||mode==4){ cubic = false; } else { cubic = true; }
+    if (mode == 4){ nn = true; } else { nn = false; }
        
     Isize[0] = (int)Isize_d[0];
     Isize[1] = (int)Isize_d[1];
@@ -239,7 +240,7 @@ voidthread transformvolume_error(double **Args) {
                 Tlocaly = dcomp1;
                 Tlocalz = dcomp2;
                 
-                I=interpolate_3d_double_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin, cubic, black);
+                I=interpolate_3d_double_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin, cubic, black, nn);
             
                 /* Calculate squared difference */
                 sqd+=(I-Iin2[indexI])*(I-Iin2[indexI]);

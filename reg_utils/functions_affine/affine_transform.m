@@ -11,6 +11,8 @@ function Iout=affine_transform(Iin,M,mode)
 %            1: linear interpolation and outside pixels set to zero
 %            2: cubic interpolation and outside pixels set to nearest pixel
 %            3: cubic interpolation and outside pixels set to zero
+%            4: nearest-neighbor interpolation and outside pixels set to
+%            zero
 %
 %
 % outputs,

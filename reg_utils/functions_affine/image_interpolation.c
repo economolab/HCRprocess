@@ -1163,18 +1163,22 @@ void interpolate_2d_double_color(double *Ipixel, double Tlocalx, double Tlocaly,
     }
 }
 
-double interpolate_3d_double_gray(double Tlocalx, double Tlocaly, double Tlocalz, int *Isize, double *Iin, int cubic, int black){
+double interpolate_3d_double_gray(double Tlocalx, double Tlocaly, double Tlocalz, int *Isize, double *Iin, int cubic, int black, int nn){
     double Ipixel;
-    if(cubic) {
-        if(black) { Ipixel=interpolate_3d_cubic_black(Tlocalx, Tlocaly, Tlocalz, Isize, Iin);}
-        else { Ipixel=interpolate_3d_cubic(Tlocalx, Tlocaly, Tlocalz, Isize, Iin);}
-    }
+    if (nn) { Ipixel = interpolate_3d_nearest_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin); }
     else {
-        if(black) { Ipixel=interpolate_3d_nearest_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin);}
-        else { Ipixel=interpolate_3d_nearest_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin);}
+        if (cubic) {
+            if (black) { Ipixel = interpolate_3d_cubic_black(Tlocalx, Tlocaly, Tlocalz, Isize, Iin); }
+            else { Ipixel = interpolate_3d_cubic(Tlocalx, Tlocaly, Tlocalz, Isize, Iin); }
+        }
+        else {
+            if (black) { Ipixel = interpolate_3d_linear_black(Tlocalx, Tlocaly, Tlocalz, Isize, Iin); }
+            else { Ipixel = interpolate_3d_linear_black(Tlocalx, Tlocaly, Tlocalz, Isize, Iin); }
+        }
     }
     return Ipixel;
 }
+
 float interpolate_3d_float_gray(float Tlocalx, float Tlocaly, float Tlocalz, int *Isize, float  *Iin, int cubic, int black){
     float Ipixel;
     if(cubic) {

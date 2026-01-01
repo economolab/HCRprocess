@@ -30,7 +30,7 @@ voidthread transformvolume(double **Args) {
     int x, y, z;
     double *Nthreadsd;
     int Nthreads;
-    bool black, cubic;
+    bool black, cubic, nn;
           
     /* Location of pixel which will be come the current pixel */
     double Tlocalx, Tlocaly, Tlocalz;
@@ -59,7 +59,8 @@ voidthread transformvolume(double **Args) {
     Nthreadsd=Args[7];  Nthreads=(int)Nthreadsd[0];
           
     if(mode==0||mode==2){ black = false; } else { black = true; }
-    if(mode==0||mode==1){ cubic = false; } else { cubic = true; }
+    if(mode==0||mode==1||mode==4){ cubic = false; } else { cubic = true; }
+    if (mode == 4){ nn = true; } else { nn = false; }
     
     Isize[0] = (int)Isize_d[0];
     Isize[1] = (int)Isize_d[1];
@@ -88,7 +89,7 @@ voidthread transformvolume(double **Args) {
                 indexI=mindex3(x, y, z, Isize[0], Isize[1]);
                 
                 /* the pixel interpolation */
-                Iout[indexI]=interpolate_3d_double_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin, cubic, black);
+                Iout[indexI]=interpolate_3d_double_gray(Tlocalx, Tlocaly, Tlocalz, Isize, Iin, cubic, black, nn);
             }
         }
     }
