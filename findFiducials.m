@@ -648,7 +648,9 @@ if isempty(h.pts.fix)
     return;
 end
 
-if ~get(h.SkipAf_checkbox, 'Value')
+% if ~get(h.SkipAf_checkbox, 'Value')
+skipAf = true;
+if not(skipAf)
     set(h.msgText, 'String', 'Doing affine warp first', 'ForegroundColor', [1 1 1], ...
         'Backgroundcolor', [1 0 0]); pause(0.1);
 
@@ -667,8 +669,10 @@ fixpts = h.pts.fix(:, [2 1 3]);
 set(h.msgText, 'String', 'Solving for b-spline warp', 'ForegroundColor', [1 1 1], ...
         'Backgroundcolor', [1 0 0]); pause(0.1);
     
-options.Verbose=false;
-options.MaxRef = 5;
+% options.Verbose=false;
+% options.MaxRef = 5;
+options.Verbose=true;
+options.MaxRef = 3;
 
 [h.O_trans,h.Spacing]         = point_registration(size(h.fixed),fixpts, curpts, options);
 [h.O_trans_inv,h.Spacing_inv] = point_registration(size(h.current),curpts, fixpts, options);
