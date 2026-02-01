@@ -27,6 +27,9 @@ newImVol = imVol;
 newImVol(~Livol) = 0;
 
 %%
+writeTiffOverlay('s04_IRNPARN_masks.tif',newImVol,info)
+
+%%
 
 volMask = zeros(size(vol),'logical');
 for i=1:size(vol,3)
