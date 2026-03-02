@@ -1,31 +1,35 @@
 % flip the z direction of a 3-D image (tif) using imageJ, expects a full 
 % file path, will overwrite the original file with the same name
-function filter_masks_ccf(masks_im,ccf_im,ccf_structs)
+function mask_add_in(masks_im,ccf_im,reg_im,embed_ims)
     
+    [imVol, info] = read_tiff(reg_im);
     ccf_vol = read_tiff(ccf_im);
-    [masks_Vol, info] = read_tiff(masks_im);
-    ccf_structs = split(ccf_structs,',');
+    parc_inds = unique(ccf_vol);
+    parc_inds(parc_inds == 0) = [];
 
-    parcID = tax2parcID(ccf_structs);
-
-    stats = regionprops3(masks_Vol,"Centroid");
-    stats = round(stats);
-    
-    centroid_in_tax = zeros(height(stats),1,"logical");
-    for i=1:height(stats)
-        ind = table2array(stats(i,:));
-        if ismember(ccf_vol(ind(2),ind(1),ind(3)),parcID)
-            centroid_in_tax(i) = true;
+    grid = makeGrid(ccf_vol,10,5);
+    volMask = zeros(size(ccf_vol),'logical');
+    for i=1:size(ccf_vol,3)
+        BW = zeros(size(ccf_vol,1),size(ccf_vol,2),'logical');
+        for j=1:length(parc_inds)
+            parc_ind = parc_inds(j);
+            parc_ind_perim = bwperim(ccf_vol(:,:,i) == parc_ind);
+            BW = BW | parc_ind_perim;
         end
+        BW = bwmorph(BW,"thicken",2);
+        BW = bwmorph(BW,"bridge");
+        BW = bwmorph(BW,"majority",2);
+        BW = BW | grid;
+        volMask(:,:,i) = BW;
     end
-    centroid_in_tax = [true; centroid_in_tax];
-    
-    cell_ids = unique(masks_Vol);
-    new_cell_ids = cell_ids(centroid_in_tax);
-    
-    Livol = ismember(masks_Vol,new_cell_ids);
-    newMasksVol = masks_Vol;
-    newMasksVol(~Livol) = 0;
+
+    volExport = zeros(size(imVol), "uint16");
+    for i=1:size(imVol,3)
+        overlayIntensity = max(imVol(:,:,i),[],"all");
+        overlayPlane = zeros(size(imVol,1),size(imVol,2),"uint16");
+        overlayPlane(volMask(:,:,i)) = overlayIntensity;
+        volExport(:,:,i) = imblend(overlayPlane,imVol(:,:,i),ForegroundOpacity=0.1);
+    end
 
     [filepath,name,~] = fileparts(masks_im);
     uniq_id = split(name,'_');
