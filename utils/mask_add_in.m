@@ -34,10 +34,10 @@ function mask_add_in(masks_im,ccf_im,reg_im,embed_ims)
     [filepath,name,~] = fileparts(masks_im);
     uniq_id = split(name,'_');
     uniq_id = uniq_id{1};
-    path = fullfile(filepath,[uniq_id '_masks_ccf.tif']);
+    path = fullfile(filepath,[uniq_id '_masks_overlay.tif']);
     t = Tiff(path, 'w8');
 
-    sz = size(newMasksVol);
+    sz = size(volExport);
 
     tagstruct.ImageLength = sz(1);
     tagstruct.ImageWidth = sz(2);
@@ -51,11 +51,55 @@ function mask_add_in(masks_im,ccf_im,reg_im,embed_ims)
     tagstruct.ExtraSamples = Tiff.ExtraSamples.Unspecified;
 
     for ii=1:sz(3)
-        plane = newMasksVol(:,:,ii);
+        plane = volExport(:,:,ii);
         setTag(t,tagstruct);
         write(t,uint16(plane));
         writeDirectory(t);
     end
     close(t)
+
+    java.lang.Runtime.getRuntime.gc;
+            
+    ImageJ
+
+    ij.IJ.run("Bio-Formats", strcat("open=[",path) + ...
+        "] color_mode=Default open_all_series " + ...
+        "rois_import=[ROI manager] " + ...
+        "view=Hyperstack " + ...
+        "stack_order=XYCZT")
+
+    num_embed_ims = length(embed_ims);
+    
+    ij.IJ.run("Bio-Formats", strcat("open=[",embed_ims{1}) + ...
+        "] color_mode=Default open_all_series " + ...
+        "rois_import=[ROI manager] " + ...
+        "view=Hyperstack " + ...
+        "stack_order=XYCZT")
+
+    if num_embed_ims == 2
+        ij.IJ.run("Bio-Formats", strcat("open=[",embed_ims{2}) + ...
+            "] color_mode=Default open_all_series " + ...
+            "rois_import=[ROI manager] " + ...
+            "view=Hyperstack " + ...
+            "stack_order=XYCZT")
+    end
+    
+    [~,embed_im1,ext] = fileparts(embed_ims{1});
+    merge_str = strcat("c1=",[uniq_id '_masks_overlay.tif']," c2=", ...
+        embed_im1,ext);
+
+    if num_embed_ims == 2
+        [~,embed_im2,ext] = fileparts(embed_ims{2});
+        merge_str = strcat(merge_str," c3=",embed_im2,ext);
+    end
+
+    merge_str = strcat(merge_str," create");
+
+    ij.IJ.run("Merge Channels...", merge_str);
+
+    savef = fullfile(filepath,[uniq_id '_masks_overlay_embed_genes.tif']);
+    ij.IJ.saveAs("Tiff", savef);
+    ij.IJ.run("Close All");
+    ij.IJ.run("Quit","");
 
 end
