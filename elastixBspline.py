@@ -301,7 +301,7 @@ def doIntensityBspline(argsDict):
 
 if __name__ == "__main__":
     # jsonFile = sys.argv[1]
-    jsonFile = r'C:\Users\jpv88\Documents\GitHub\HCRprocess\internal\data.json'
+    jsonFile = r'C:\Users\economolab\Documents\GitHub\HCRprocess\internal\data.json'
     with open(jsonFile) as f:
         data = json.load(f)
         print(data)

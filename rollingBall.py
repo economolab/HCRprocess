@@ -19,11 +19,11 @@ def normalize_local_contrast(image, blockRadiusX, blockRadiusY, meanFactor, cent
 
     if center and stretch:
         min_ = mean - d
-        return ((image_original - min_) / (2 * d) * image_original.ptp() + image_original.min())
+        return ((image_original - min_) / (2 * d) * np.ptp(image_original) + image_original.min())
     elif center:
         return image_original - mean + image_original.mean()
     elif stretch:
-        return (image_original - mean) / (2 * d) * image_original.ptp() + mean
+        return (image_original - mean) / (2 * d) * np.ptp(image_original) + mean
 
 
 def shrink_image(ip, shrink_factor):
