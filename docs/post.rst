@@ -21,7 +21,11 @@ This tab is where image files are registered using an affine fiducial-based warp
     :align: center
     :alt: unmixing GUI
 
-1. Pitch and yaw of the blocking cut for each image file. These can be edited manually here and will automatically save. They are also loaded automatically into this table when saved within the blocking cut GUI. These values are auto loaded into the CCF registration GUI for each image file when it's opened. Pitch should be identical for each image file. The magnitude of the yaw should be identical as well, but its sign may need to be flipped depending on the orientation of the image file compared to whatever was used to calculate the pitch and yaw originally. This is discussed in more detail in the blocking cut GUI documentation. 
+#. Pitch and yaw of the blocking cut for each image file. These can be edited manually here and will automatically save. They are also loaded automatically into this table when saved within the blocking cut GUI. These values are auto loaded into the CCF registration GUI for each image file when it's opened. Pitch should be identical for each image file. The magnitude of the yaw should be identical as well, but its sign may need to be flipped depending on the orientation of the image file compared to whatever was used to calculate the pitch and yaw originally. This is discussed in more detail in the blocking cut GUI documentation. 
+
+#. CCF registration functions. Press ``Launch block cut GUI`` to launch the blocking cut angle finding GUI. Files to use are selected within the GUI. This GUI only needs to be used once per experiment. Press ``CCF register this file`` to open the CCF registration GUI for the file selected in the table below. This GUI needs to be used once for every HCR image file in an experiment.
+
+#. This table stores info about CCF registration completion for all image files. The ``CCF Registration Settings`` column shows whether a CCF registration settings file has been saved for this image file yet. This file contains information about fiducials, blocking cut angle, and 3D crop dimensions. The ``CCF Registered`` column shows whether the actual registration procedure has been successfully carried out using a settings file.
 
 Cellpose-SAM Mask Segmentation and Quality Control
 ~~~~~~~~~~~~~~~~~~~~~~~
