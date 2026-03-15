@@ -80,6 +80,3 @@ The goal of finding fiducials is to produce a high quality initial affine transf
 * Aligning images from pre-HCR imaging to post-HCR imaging is much more difficult than aligning post to post, since the initial HCR treatments significantly shrink and deform the tissue section, and pre-HCR treatments are captured with NeuroTrace as opposed to Snap25 fluorescence. It is recommended to mark at least 15-20 fiducials for these transforms and perhaps up to as much as 25-30 for highly deformed sections. For post-to-post registration, 10-15 fiducials is generally adequate, although as many as 20 may be needed if imaging alignment is poor. 
 * The affine transform is fundamentally limited in its ability to capture non-linear deformations. If adding more fiducials is not improving image alignment, this may simply be a limitation of the affine transform, and further alignment must be delegated to the intensity-based B-spline warp. 
 
-Lipofuscin Removal GUI
-~~~~~~~~~~~~~~~~~~~~~~~
-
