@@ -1,7 +1,7 @@
-Manual GUIs
+Core Manual GUIs
 ------------------------------
 
-Multiple operations in HCRprocess require manual intervention. These operations call popup external GUIs, and instructions for using these GUIs are described below. 
+Multiple operations in the core pipeline of HCRprocess require manual intervention. These operations call popup external GUIs, and instructions for using these GUIs are described below. 
 
 Spectral Unmixing GUI
 ~~~~~~~~~~~~~~~~~~~~~~~
