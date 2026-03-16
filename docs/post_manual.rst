@@ -3,10 +3,10 @@ Post Processing Manual GUIs
 
 Multiple operations in the post-processing pipeline of HCRprocess require manual intervention. These operations call popup external GUIs, and instructions for using these GUIs are described below. 
 
-Spectral Unmixing GUI
+Block Cut GUI
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-This GUI is called as part of the spectral unmixing operation. It is a GUI developed by Michael Economo for the purpose of manually setting parameters for linear unmixing of a multispectral image. See `this article from Nikon <https://www.microscopyu.com/techniques/confocal/spectral-imaging-and-linear-unmixing>`_ for a general overview of spectral imaging and linear unmixing. 
+This GUI is called as part of the Allen CCF registration operation. The purpose of the GUI is to roughly estimate the angle of the blocking cut with which a fixed brain was cut. This angle is generally the largest source of deviation between observed and CCF anatomy. Estimating it and then pre-rotating the CCF to match makes subsequent fiducial-based registration simpler and more accurate. This angle is also conserved across all tissue sections obtained from a brain, meaning it only needs to be estimated once and can then be used for all subsequent image files. 
 
 Basic usage instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
