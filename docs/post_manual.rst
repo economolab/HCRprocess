@@ -11,14 +11,14 @@ This GUI is called as part of the Allen CCF registration operation. The purpose 
 Basic usage instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. image:: doc_assets/unmixing_manual_gui_final.png
+.. image:: doc_assets/block_cut_gui_final.png
     :width: 800px
     :align: center
-    :alt: unmixing manual GUI
+    :alt: block cut GUI
 
-#. Displays the current image being unmixed as well as its name. Shows only one slice from the middle of the z-stack. 
+#. Displays the sample image. The sample image can be ANY image from the experiment. The best image for estimating blocking cut angle will vary from experiment to experiment. Generally speaking, an image must be bilateral (in order to identify yaw) and should almost certainly contain a full coronal section. Beyond this, it's a good idea to look for images that have small, unique anatomical landmarks or patterns that vary quickly and specifically in all directions. Examples of this include the cerebellum, facial nerve, hippocampus, ventricles, etc. Histology images of injection sites are well suited to this purpose. Even if an experiment includes no injections, it's a good idea to take a full coronal image somewhere for CCF registration purposes. 
 
-#. Channels panel: displays all channels contained in the image. Turn channels on and off using the ``On`` checkbox. Use the ``Auto`` radio button to enable auto contrast scaling, or disable it to manually set pixel minimum and maximum values. Change the color of a channel by clicking the color indicator. Check the ``HiLo LUT`` checkbox to enable HiLo pixel coloring. Channels are displayed here from left to right and can be indexed from 1 to the total number of channels. These indices are the ones used in the spectral unmixing table.
+#. Displays the CCF volume. Move the slider on the bottom or click the arrows to move in AP. Single arrow moves 1 section, double arrow moves 10. Click anywhere in the CCF to see anatomical label information in the tooltip below the AP slider. A red cross will appear marking where you clicked, and the organ, category, division, structure, and substructure associated with that pixel will be displayed. 
 
 #. Spectral unmixing table: This table is where spectral unmixing parameters are manually set. ``Unmix from`` denotes the channel whose signal will be subtracted from the target ``Unmix to`` channel. For instance if channel 2 contained spectral bleed from fluorophores in channel 3 that you wanted to remove, then channel 3 would be your ``Unmix from`` channel, and channel 2 would be your ``Unmix to`` channel. ``Scale`` and ``Offset`` are the input linear weights for an unmixing operation. ``Enable`` determines whether that particular linear unmixing will be carried out. Unmixing operations are carried out in the order they are listed in the table, from top to bottom. 
 
