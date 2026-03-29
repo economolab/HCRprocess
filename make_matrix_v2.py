@@ -8,12 +8,14 @@ matrix.
 
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 import tifffile
 
+from astropy.stats import SigmaClip
+from photutils.background import Background2D, MedianBackground
+from skimage.measure import regionprops
 from tqdm import tqdm
 
 #%% explicit and derived params
@@ -72,6 +74,7 @@ cell_df.insert(0,'Cell ID',mask_df['Mask ID'])
 cell_df.insert(0,'Mask ID',mask_df['Mask ID'])
 cell_df.insert(cell_df.shape[1],'Z-plane',mask_df['Z-plane'])
 cell_df.insert(cell_df.shape[1],'Z-span',mask_df['Z-span'])
+cell_df.insert(cell_df.shape[1],'Principal Plane',mask_df['Principal Plane'])
 cell_df.insert(cell_df.shape[1],'Assessed',mask_df['Assessed'])
 cell_df.insert(cell_df.shape[1],'Result',mask_df['Result'])
 
@@ -106,12 +109,68 @@ mask_im_f = str(mask_im_f[0])
 quant_gene_ims = []
 
 for i in tqdm(range(len(data_f)),desc='Loading images...'):
-    im = tifffile.imread(os.path.join(data_dir,data_f[0]))
+    im = tifffile.imread(os.path.join(data_dir,data_f[i]))
     im = np.transpose(im,[1,2,0])
+    im[np.isnan(im)] = 0
     quant_gene_ims.append(im)
     
 mask_im = tifffile.imread(os.path.join(mask_im_dir,mask_im_f))
 mask_im = np.transpose(mask_im,[1,2,0])
     
+#%%
 
+# delete masks from masks image that didn't make the cut
+all_masks = np.unique(mask_im)
+all_masks = np.delete(all_masks,0)
+good_masks = cell_df['Mask ID'].values
+good_masks_bool = [mask in good_masks for mask in all_masks]
+masks_to_delete_bool = np.invert(good_masks_bool)
+masks_to_delete = all_masks[masks_to_delete_bool]
+isin_bool = np.isin(mask_im,masks_to_delete)
+mask_im[isin_bool] = 0
 
+pp_mask_im = np.zeros(mask_im.shape, dtype=np.uint16)
+for mask in tqdm(good_masks):
+    z_plane = cell_df['Z-plane'][cell_df['Mask ID'] == mask].values[0]
+    pp = cell_df['Principal Plane'][cell_df['Mask ID'] == mask].values[0]
+    pp_python = z_plane + pp - 2
+    pp_bool = (mask_im[:,:,pp_python] == mask)
+    pp_mask_im[pp_bool,pp_python] = mask
+    
+props = regionprops(pp_mask_im)
+area = [prop.area for prop in props]
+cell_df.insert(cell_df.shape[1],'Area',area)
+
+#%% quantify genes 
+
+for i, quant_gene in enumerate(quant_genes):
+                          
+    print('Quantifying ' + quant_gene + '...')
+    intensity_image = np.copy(quant_gene_ims[i])
+    background = np.zeros(intensity_image.shape, dtype=np.uint16)
+    
+    for j in tqdm(range(intensity_image.shape[2]),
+                  desc='Calculating background for ' + quant_gene):
+        
+        box_size = 50
+        filter_size = 3
+    
+        sigma_clip = SigmaClip(sigma=3.0)
+        bkg_estimator = MedianBackground()
+    
+        bkg = Background2D(intensity_image[:,:,j], box_size, filter_size=filter_size,
+                            sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
+        
+        background[:,:,j] = bkg.background
+    
+    
+    intensity_image = (intensity_image - background) / background
+    props = regionprops(pp_mask_im,intensity_image=intensity_image)
+    
+    intensity_mean = [prop.intensity_mean for prop in props]
+    cell_df[quant_gene] = intensity_mean
+    
+#%%
+
+cell_df.to_csv(exp_name + '_' + uniq_id + '.csv',
+               index=False)
