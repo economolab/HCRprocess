@@ -62,6 +62,7 @@ data_f = data_f[np.invert(mask_f_mask)]
 bin_df = pd.read_csv(os.path.join(data_dir,bin_f))
 bin_df.drop(columns='Row',inplace=True)
 bin_genes = list(bin_df.columns)
+bin_genes.remove('rph3a')
 
 bin_genes_f_mask = [check_for_tokens(f,bin_genes) for f in data_f]
 bin_genes_f = data_f[bin_genes_f_mask]
@@ -169,6 +170,62 @@ for i, quant_gene in enumerate(quant_genes):
     
     intensity_mean = [prop.intensity_mean for prop in props]
     cell_df[quant_gene] = intensity_mean
+    
+#%% quantify genes, no bg
+
+for i, quant_gene in enumerate(quant_genes):
+                          
+    print('Quantifying ' + quant_gene + '...')
+    intensity_image = np.copy(quant_gene_ims[i])
+    
+    props = regionprops(pp_mask_im,intensity_image=intensity_image)
+    
+    intensity_mean = [prop.intensity_mean for prop in props]
+    cell_df[quant_gene] = intensity_mean
+    
+# %% spot counting
+
+import bigfish.detection as detection
+
+# iterate through genes
+for i, quant_gene in enumerate(quant_genes):
+    
+    print('Quantifying ' + quant_gene + '...')
+    intensity_image = np.copy(quant_gene_ims[i])
+    
+    cell_spots_dict = {}
+    for cell_id in cell_df['Mask ID'].values:
+        cell_spots_dict[cell_id] = 0
+        
+    for j in tqdm(range(intensity_image.shape[2])):
+        
+        spots = detection.detect_spots(intensity_image[:,:,j], 
+                                       voxel_size=(325, 325), 
+                                       spot_radius=(325, 325))
+        
+        spots_post_decomposition, dense_regions, reference_spot = detection.decompose_dense(
+            intensity_image[:,:,j],
+            spots=spots,
+            voxel_size = (325, 325),
+            spot_radius = (325, 325))
+        
+        spots_mask = np.zeros(np.shape(intensity_image[:,:,j]), dtype=bool)
+        for spot in spots_post_decomposition:
+        # for spot in spots:
+            spots_mask[spot[0], spot[1]] = True
+            
+        label_spots = spots_mask * pp_mask_im[:,:,j]
+        
+        unique, unique_counts = np.unique(label_spots, return_counts=True)
+        
+        unique = unique[1:]
+        unique_counts = unique_counts[1:]
+        
+        for k, val in enumerate(unique):
+            cell_spots_dict[val] += unique_counts[k]
+        
+        
+    cell_df[quant_gene] = list(cell_spots_dict.values())
     
 #%%
 
