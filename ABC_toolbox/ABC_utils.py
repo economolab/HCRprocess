@@ -16,7 +16,7 @@ pardir = os.path.dirname(dname)
 sys.path.append(pardir)
 
 # import params from parent directory
-import params
+# import params
 
 import numpy as np
 

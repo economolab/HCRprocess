@@ -43,13 +43,22 @@ def concat_cell_dfs(cell_dfs):
     
     return cell_df
 
-def build_cell_anndata(cell_df, obs_anno):
+def build_cell_anndata(cell_df, obs_anno, norm_by_area=False):
     
     obs_anno = dict.fromkeys(obs_anno)
     
     for key in obs_anno.keys():
         obs_anno[key] = cell_df[key].values
         cell_df.drop(columns=key, inplace=True)
+    
+    if norm_by_area == True:
+        
+        one_pix = 0.325 * 0.325
+        
+        for col in cell_df.columns:
+            cell_df[col] = cell_df[col] / (cell_df['Area'] * one_pix)
+                                           
+        cell_df.drop(columns='Area', inplace=True)
         
     adata = ad.AnnData(cell_df)
     
@@ -65,11 +74,11 @@ def build_cell_anndata(cell_df, obs_anno):
 cell_dfs = []
 
 for filepath in filepaths:
-    cell_dfs.append(load_cell_df(filepath, usecols))
+    cell_dfs.append(load_cell_df(filepath, usecols, index_col='Cell ID'))
     
 cell_df = concat_cell_dfs(cell_dfs)
 
-adata = build_cell_anndata(cell_df, obs_anno)
+adata = build_cell_anndata(cell_df, obs_anno, norm_by_area=False)
     
 # %%
 
@@ -83,7 +92,7 @@ sc.tl.leiden(adata, flavor="igraph", n_iterations=-1)
 
 # %%
 
-sc.pl.umap(adata, color='ralyl')
+sc.pl.umap(adata, color='dtom')
 
 # %%
 
@@ -155,7 +164,7 @@ for i in range(len(genes)):
 
 # %%
 
-for gene in data_df.columns:
+for gene in cell_df.columns:
 
     sc.pl.umap(adata, color=gene)
     
