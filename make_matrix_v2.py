@@ -229,5 +229,11 @@ for i, quant_gene in enumerate(quant_genes):
     
 #%%
 
+tifffile.imwrite(exp_name + '_' + uniq_id + '_pp_masks.tif', 
+                 np.moveaxis(pp_mask_im,2,0), 
+                 photometric='minisblack')
+
+#%%
+
 cell_df.to_csv(exp_name + '_' + uniq_id + '.csv',
                index=False)
