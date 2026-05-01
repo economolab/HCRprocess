@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 #%% explicit and derived params
 
-data_dir = 'D:\\2026-01-16_MC_SC_17\\post\\core_output\\s03L'
+data_dir = 'D:\\2026-01-16_MC_SC_17\\post\\core_output\\s01R'
 reg_tokens = ['nt', 'neur', 'snap25']
 bin_tokens = ['bin']
 mask_tokens = ['mask']

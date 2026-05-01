@@ -92,7 +92,7 @@ sc.tl.leiden(adata, flavor="igraph", n_iterations=-1)
 
 # %%
 
-sc.pl.umap(adata, color='dtom')
+sc.pl.umap(adata, color='leiden')
 
 # %%
 
@@ -115,15 +115,19 @@ ax.set_xticks(range(len(genes)), labels=genes,
               rotation=45, ha="right", rotation_mode="anchor")
 ax.set_yticks(range(len(genes)), labels=genes)
 
-for i in range(len(genes)):
-    for j in range(len(genes)):
-        text = ax.text(j, i, np.round(R[i, j], decimals=1),
-                       ha="center", va="center", color="w")
+# for i in range(len(genes)):
+#     for j in range(len(genes)):
+#         text = ax.text(j, i, np.round(R[i, j], decimals=1),
+#                        ha="center", va="center", color="w")
+        
+plt.title('HCR data correlation matrix')
         
 # %%
 
 import os
 from ABC_toolbox import cell_funcs, gene_funcs
+
+n_real_cells = len(cell_df)
 
 local_data_dir = r'C:\Users\jpv88\Documents\GenePicker9001_data'
 abc_genes = np.load(r'C:\Users\jpv88\Documents\GitHub\GenePicker9001\ABC_toolbox\util_files\gene_scRNAseq.npy', 
@@ -132,17 +136,15 @@ abc_genes = [gene.lower() for gene in abc_genes]
 abc_genes_idx = [np.where(gene == np.array(abc_genes))[0][0] for gene in genes]
 
 meta = pd.read_csv(os.path.join(local_data_dir, "antIRN-PARN-scRNAseq-meta.csv"), low_memory=False)
-exp = np.load(os.path.join(local_data_dir, "antIRN-PARN-scRNAseq-raw.npy"))
+exp = np.load(os.path.join(local_data_dir, "antIRN-PARN-scRNAseq-norm.npy"))
 freqs = pd.read_pickle(os.path.join(local_data_dir, "antIRN-PARN-MERFISH-freqs.pkl"))
 exp = exp[:,abc_genes_idx]
 
-exp_super, meta_super = cell_funcs.boot_super(exp, meta, k=3)
-
-exp_super = gene_funcs.normalize_counts_to_median(exp_super)
+exp_super, meta_super = cell_funcs.boot_super(exp, meta, k=1)
 
 # bootstrap distribution from scRNAseq that matches MERFISH frequencies
 exp_boot, meta_boot = cell_funcs.bootstrap_scRNAseq(meta_super, exp_super, freqs, 
-                                                    n=10000)
+                                                    n=n_real_cells)
 
 # %%
 
@@ -157,10 +159,12 @@ ax.set_xticks(range(len(genes)), labels=genes,
               rotation=45, ha="right", rotation_mode="anchor")
 ax.set_yticks(range(len(genes)), labels=genes)
 
-for i in range(len(genes)):
-    for j in range(len(genes)):
-        text = ax.text(j, i, np.round(R[i, j], decimals=1),
-                       ha="center", va="center", color="w")
+# for i in range(len(genes)):
+#     for j in range(len(genes)):
+#         text = ax.text(j, i, np.round(R[i, j], decimals=1),
+#                        ha="center", va="center", color="w")
+        
+plt.title('scRNA-seq (ABC atlas) correlation matrix')
 
 # %%
 
