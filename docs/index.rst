@@ -25,6 +25,7 @@ HCRprocess (`GitHub <https://github.com/economolab/HCRprocess>`_) is an `HCR-mFI
 
    main
    core
-   hist
    post
-   manual
+   core_manual
+   post_manual
+   hist

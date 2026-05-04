@@ -1,0 +1,105 @@
+%% load masks
+
+[masks_im, masks_im_info] = read_tiff('D:\2026-01-16_MC_SC_17\post\masks\s03L\s03L_masks_ccf.tif');
+masks = unique(masks_im);
+masks(1) = [];
+num_masks = length(masks);
+
+masks_stats = regionprops3(masks_im,{"Centroid"});
+masks_stats(any(ismissing(masks_stats),2),:) = []; % remove NaN rows
+masks_stats.Properties.RowNames = string(masks);
+
+pointsMasks = masks_stats{:,"Centroid"};
+
+%% for testing if back transformation worked
+
+abcDir = 'C:\Users\jpv88\Documents\allen-brain-cell-atlas';
+imgDir = fullfile(abcDir,'image_volumes', ...
+    'Allen-CCF-2020','20230630');
+
+anno_bound = niftiread(fullfile(imgDir,'annotation_boundary_10.nii'));
+
+anno_bound = imrotate3(anno_bound,-90,[0 0 1]);
+anno_bound = imrotate3(anno_bound,-90,[0 1 0]);
+
+prePitchCenter = (size(anno_bound,1,2,3)/2)';
+anno_bound = imrotate3(anno_bound,-appStateStruct.Pitch,[1 0 0],"nearest");
+preYawCenter = (size(anno_bound,1,2,3)/2)';
+anno_bound = imrotate3(anno_bound,-appStateStruct.Yaw,[0 1 0],"nearest");
+
+
+%%
+
+load('D:\2026-01-16_MC_SC_17\post\CCF_vols\s03L\s03LCCFReg.mat')
+
+af = appStateStruct.af;
+af = inv(af);
+af(abs(af)<1e-9) = 0;
+af(abs(af-1)<1e-9) = 1;
+
+a = [pointsMasks, ones(size(pointsMasks,1),1)]; % append a column of ones to points matrix
+a = a*af;
+warpPointsMasks = a(:,1:3);
+
+pointsPreCrop = zeros(size(warpPointsMasks));
+cuboid = appStateStruct.cuboid;
+pointsPreCrop(:,1) = warpPointsMasks(:,1) + double(cuboid(1));
+pointsPreCrop(:,2) = warpPointsMasks(:,2) + double(cuboid(2));
+pointsPreCrop(:,3) = warpPointsMasks(:,3) + double(cuboid(3));
+
+%%
+
+theta = appStateStruct.Pitch;
+pitchAf = [1 0 0 prePitchCenter(1); 
+    0 cosd(theta) sind(theta) prePitchCenter(2);
+    0 ]
+
+%%
+% undo pitch and yaw rotations
+
+pointsPreCrop = pointsPreCrop';
+
+theta = appStateStruct.Pitch;
+R_x = [1 0 0; 0 cosd(theta) -sind(theta); 0 sind(theta) cosd(theta)];
+
+theta = appStateStruct.Yaw;
+R_y = [cosd(theta) 0 sind(theta); 0 1 0; -sind(theta) 0 cosd(theta)];
+
+pointsPrePitch = R_x * pointsPreCrop;
+
+% warpPointsMasks = R_x*warpPointsMasks;
+% warpPointsMasks = R_y*warpPointsMasks;
+
+pointsPrePitch = pointsPrePitch';
+
+
+%% undo initial ccf rotations
+% We work with ccf where x = ML, y = DV, and z = AP, because I think that
+% makes more sense. In the actual ccf, x = AP, y = DV, and z = ML
+% (nonsense). To accomplish this, the first thing I always do when loading
+% the ccf is rotate -90 degrees about the z axis, and then rotate -90
+% degrees about the y axis. These rotations undo those initial rotations
+% and put us back into "correct" allen ccf space. 
+
+theta = -90;
+R_y = [cosd(theta) 0 sind(theta); 0 1 0; -sind(theta) 0 cosd(theta)];
+
+theta = -90;
+R_z = [cosd(theta) -sind(theta) 0; sind(theta) cosd(theta) 0; 0 0 1]; 
+
+warpPointsMasks = R_y*warpPointsMasks;
+warpPointsMasks = R_z*warpPointsMasks;
+
+warpPointsMasks = warpPointsMasks'; 
+
+
+
+%%
+
+test_ax = axes;
+axis(test_ax,"off")
+axis(test_ax,"image")
+hold(test_ax,"on")
+
+imshow(anno_bound(:,:,round(median(pointsPrePitch(:,3)))),Parent=test_ax)
+scatter(test_ax,pointsPrePitch(:,1),pointsPrePitch(:,2))
