@@ -18,7 +18,8 @@ from analysis_utils import load_data, filter_data, img_utils
 #%%
 
 exp_dirs = [r'D:\2026-01-16_MC_SC_17']
-masks_im_f = r'D:\2026-01-16_MC_SC_17\post\masks\s03L\s03L_masks_qc_final.tif'
+# masks_im_f = r'D:\2026-01-16_MC_SC_17\post\masks\s03L\s03L_masks_qc_final.tif'
+masks_im_f = r'D:\2026-01-16_MC_SC_17\post\masks\s03L\s03L_cp_masks.tif'
 neur_im_f = r'D:\2026-01-16_MC_SC_17\post\core_output\s03L\r1_neur445.tif'
 
 n_components = 6
@@ -27,12 +28,19 @@ max_pc_percentile = 90
 
 #%%
 
-cell_df_orig = load_data.load_experiments(exp_dirs)
+# cell_df_orig = load_data.load_experiments(exp_dirs)
+# cell_df_orig = filter_data.filt_cells(cell_df_orig, 's03L')
+
+# cell_df_gene = load_data.load_experiments(exp_dirs)
+# cell_df_gene = filter_data.filt_cells(cell_df_gene, 's03L')
+# cell_df_gene = filter_data.filt_features(cell_df_gene, remove_features=['dtom', 'egfp'], genes=True)
+
+cell_df_orig = load_data.load_cell_df('MC_SC_17_s03L_uncurated.csv')
 cell_df_orig = filter_data.filt_cells(cell_df_orig, 's03L')
 
-cell_df_gene = load_data.load_experiments(exp_dirs)
+cell_df_gene = load_data.load_cell_df('MC_SC_17_s03L_uncurated.csv')
 cell_df_gene = filter_data.filt_cells(cell_df_gene, 's03L')
-cell_df_gene = filter_data.filt_features(cell_df_gene, remove_features=['dtom', 'egfp'], genes=True)
+cell_df_gene = filter_data.filt_features(cell_df_gene, genes=True)
 
 #%%
 
