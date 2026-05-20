@@ -25,7 +25,7 @@ function process_histo(file)
                 "computation_parameters=[Save memory (but be slower)] " + ...
                 "image_output=[Fuse and display]");
         
-            ij.IJ.run("Z Project...", "projection=[Max Intensity]");
+            % ij.IJ.run("Z Project...", "projection=[Max Intensity]");
         
             [filepath,name,~] = fileparts(file);
             savef = filepath(1:end-4);
