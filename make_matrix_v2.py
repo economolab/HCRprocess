@@ -18,55 +18,31 @@ from photutils.background import Background2D, MedianBackground
 from skimage.measure import regionprops
 from tqdm import tqdm
 
+from analysis_utils import matrix_utils
+
 #%% explicit and derived params
 
-data_dir = 'D:\\2026-01-16_MC_SC_17\\post\\core_output\\s01R'
-reg_tokens = ['nt', 'neur', 'snap25']
-bin_tokens = ['bin']
-mask_tokens = ['mask']
-mask_im_tokens = ['masks_qc_final']
+data_dir = 'D:\\2026-01-16_MC_SC_17\\post\\core_output\\s03L'
 
-(head,uniq_id) = os.path.split(data_dir)
-(post_dir,tail) = os.path.split(head)
-(head,tail) =  os.path.split(post_dir)
-(head,tail) = os.path.split(head)
-exp_name = tail[11:]
-
-#%% functions
-
-# Check if any tokens are in a string. Returns bool
-def check_for_tokens(string,tokens):
-    
-    TF = any([token.casefold() in string.casefold() for token in tokens])
-    
-    return TF
+uniq_id, post_dir, exp_name = matrix_utils.derive_params(data_dir)
+data_f, reg_f, bin_f, mask_f, mask_im_f = matrix_utils.build_paths(data_dir, 
+                                                                   uniq_id, 
+                                                                   post_dir, 
+                                                                   exp_name,
+                                                                   mode='uncurated')
 
 #%% load everything
 
-data_f = np.array(os.listdir(data_dir))
+# bin_df = pd.read_csv(os.path.join(data_dir,bin_f))
+# bin_df.drop(columns='Row',inplace=True)
+# bin_genes = list(bin_df.columns)
+# bin_genes.remove('rph3a')
 
-reg_f_mask = [check_for_tokens(f,reg_tokens) for f in data_f]
-reg_f = data_f[reg_f_mask]
-data_f = data_f[np.invert(reg_f_mask)]
+# bin_genes_f_mask = [check_for_tokens(f,bin_genes) for f in data_f]
+# bin_genes_f = data_f[bin_genes_f_mask]
+# data_f = data_f[np.invert(bin_genes_f_mask)]
 
-bin_f_mask = [check_for_tokens(f,bin_tokens) for f in data_f]
-bin_f = data_f[bin_f_mask]
-bin_f = str(bin_f[0])
-data_f = data_f[np.invert(bin_f_mask)]
-
-mask_f_mask = [check_for_tokens(f,mask_tokens) for f in data_f]
-mask_f = data_f[mask_f_mask]
-mask_f = str(mask_f[0])
-data_f = data_f[np.invert(mask_f_mask)]
-
-bin_df = pd.read_csv(os.path.join(data_dir,bin_f))
-bin_df.drop(columns='Row',inplace=True)
-bin_genes = list(bin_df.columns)
-bin_genes.remove('rph3a')
-
-bin_genes_f_mask = [check_for_tokens(f,bin_genes) for f in data_f]
-bin_genes_f = data_f[bin_genes_f_mask]
-data_f = data_f[np.invert(bin_genes_f_mask)]
+data_f = data_f[2:]
 
 mask_df = pd.read_csv(os.path.join(data_dir,mask_f))
 
@@ -79,9 +55,9 @@ cell_df.insert(cell_df.shape[1],'Principal Plane',mask_df['Principal Plane'])
 cell_df.insert(cell_df.shape[1],'Assessed',mask_df['Assessed'])
 cell_df.insert(cell_df.shape[1],'Result',mask_df['Result'])
 
-for bin_gene in bin_genes:
-    cell_df.insert(cell_df.shape[1],bin_gene,bin_df[bin_gene])
-    cell_df[bin_gene] = cell_df[bin_gene].astype('bool')
+# for bin_gene in bin_genes:
+#     cell_df.insert(cell_df.shape[1],bin_gene,bin_df[bin_gene])
+#     cell_df[bin_gene] = cell_df[bin_gene].astype('bool')
     
 cell_df = cell_df[cell_df['Assessed'] == 1]
 cell_df = cell_df[cell_df['Result'] == 'good']
@@ -97,13 +73,6 @@ cell_df['Cell ID'] = cell_df['Cell ID'].astype(str)
 for i in range(cell_df.shape[0]):
     cell_df.loc[i,"Cell ID"] = exp_name + '_' + uniq_id + '_' + str(i+1)
 
-# get the masks image path
-mask_im_dir = os.path.join(post_dir,'masks',uniq_id)
-mask_im_dir_f = np.array(os.listdir(mask_im_dir))
-mask_im_f_mask = [check_for_tokens(f,mask_im_tokens) for f in mask_im_dir_f]
-mask_im_f = mask_im_dir_f[mask_im_f_mask]
-mask_im_f = str(mask_im_f[0])
-
     
 #%% load images
 
@@ -115,7 +84,7 @@ for i in tqdm(range(len(data_f)),desc='Loading images...'):
     im[np.isnan(im)] = 0
     quant_gene_ims.append(im)
     
-mask_im = tifffile.imread(os.path.join(mask_im_dir,mask_im_f))
+mask_im = tifffile.imread(mask_im_f)
 mask_im = np.transpose(mask_im,[1,2,0])
     
 #%%
@@ -235,5 +204,8 @@ tifffile.imwrite(exp_name + '_' + uniq_id + '_pp_masks.tif',
 
 #%%
 
-cell_df.to_csv(exp_name + '_' + uniq_id + '.csv',
+# cell_df.to_csv(exp_name + '_' + uniq_id + '.csv',
+#                index=False)
+
+cell_df.to_csv(exp_name + '_' + uniq_id + '_uncurated' + '.csv',
                index=False)

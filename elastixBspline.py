@@ -58,7 +58,7 @@ def getCompleteParameterMap(initial_transform_file,initial_affine,numIterations,
     parameterMap["NumberOfSpatialSamples"] = ["10000"]
     
     parameterObjInit.SetParameterMap(parameterMap)
-    parameterObjInit.WriteParameterFile(parameterObjInit,initial_transform_file)
+    parameterObjInit.WriteParameterFile(initial_transform_file)
 
     parameterObj = itk.ParameterObject.New()
 
@@ -153,7 +153,9 @@ def doRegistration(initial_transform_file,fixedIm,movingIm,parameterObj,pointsFi
 
     for index in range(parameterObj.GetNumberOfParameterMaps()):
         parameter_map = parameterObj.GetParameterMap(index)
-        parameterObj.WriteParameterFile(parameter_map, os.path.join(".", "TransformParameters.{0}.txt".format(index)))
+        new_param_obj = itk.ParameterObject.New()
+        new_param_obj.AddParameterMap(parameter_map)
+        new_param_obj.WriteParameterFile(os.path.join(".", "TransformParameters.{0}.txt".format(index)))
 
     elastix_object.SetInitialTransformParameterFileName(initial_transform_file)
     elastix_object.LogToConsoleOn()
@@ -204,7 +206,9 @@ def updateAndSaveIntermediate(parameterObjInit,result_transform_parameters,head,
     
     for index in range(parameterObjFinal.GetNumberOfParameterMaps()):
         parameter_map = parameterObjFinal.GetParameterMap(index)
-        parameterObjFinal.WriteParameterFile(parameter_map, os.path.join(head, "TransformParameters.{0}.txt".format(index)))
+        new_param_obj = itk.ParameterObject.New()
+        new_param_obj.AddParameterMap(parameter_map)
+        new_param_obj.WriteParameterFile(os.path.join(head, "TransformParameters.{0}.txt".format(index)))
 
 
     print(parameterObjFinal)

@@ -25,7 +25,7 @@ function process_histo(file)
                 "computation_parameters=[Save memory (but be slower)] " + ...
                 "image_output=[Fuse and display]");
         
-            ij.IJ.run("Z Project...", "projection=[Max Intensity]");
+            % ij.IJ.run("Z Project...", "projection=[Max Intensity]");
         
             [filepath,name,~] = fileparts(file);
             savef = filepath(1:end-4);
@@ -36,8 +36,6 @@ function process_histo(file)
             ij.IJ.run("Close All");
             ij.IJ.run("Quit","");
             
-            java.lang.Runtime.getRuntime.gc;
-        
             junk = fullfile(filepath,'TileConfiguration.registered.txt');
             delete(junk)
 
@@ -52,13 +50,11 @@ function process_histo(file)
                 "rois_import=[ROI manager] " + ...
                 "view=Hyperstack " + ...
                 "stack_order=XYCZT")
-
-            ij.IJ.run("Close");
-            ij.IJ.run("Close");
-            ij.IJ.run("Close");
-            ij.IJ.run("Close");
-            ij.IJ.run("Close");
-            ij.IJ.run("Close");
+            
+            nImages = ij.WindowManager.getImageCount();
+            for i=1:nImages-1
+                ij.IJ.run("Close");
+            end
 
             ij.IJ.run("Make Composite");
 
@@ -70,9 +66,13 @@ function process_histo(file)
             ij.IJ.saveAs("Tiff", savef);
             ij.IJ.run("Close All");
             ij.IJ.run("Quit","");
-            
-            java.lang.Runtime.getRuntime.gc;
            
     end
+
+    while ~isempty(ij.IJ.getInstance())
+        pause(0.1);
+    end
+
+    java.lang.Runtime.getRuntime.gc;
 
 end
