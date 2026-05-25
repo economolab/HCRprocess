@@ -22,10 +22,15 @@ import tifffile
 from ABC_toolbox import ABC_plot
 from tqdm import tqdm
 
+from analysis_utils import load_data, filter_data, img_utils
+
 mpl.rcParams['image.composite_image'] = False
 plt.rcParams['svg.fonttype'] = 'none'
 
 # %%
+
+exp_dirs = [r'D:\2026-01-16_MC_SC_17']
+cell_df_orig = load_data.load_experiments(exp_dirs)
 
 filepaths = ['MC_SC_17_s03L.csv', 'MC_SC_17_s01R.csv']
 
