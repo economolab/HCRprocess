@@ -31,7 +31,7 @@ function [im, info] = read_tiff(path,targetChan)
             
             % read 1 plane at a time
             for i=1:planes
-                
+
                 im(:,:,:,i) = read(t);
     
                 % increment directory, unless you've just loaded the last plane
