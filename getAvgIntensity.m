@@ -35,7 +35,7 @@ function getAvgIntensity(fig)
     cnt = 2;
     for i = 1:h.Nchans
         if visChans(i) == 1
-            vals = h.tiffstack(min(yvals):max(yvals), min(xvals):max(xvals), i, h.plane);
+            vals = h.stack(min(yvals):max(yvals), min(xvals):max(xvals), i);
             meanIntensity = round(mean(vals, 'all'));
             str(cnt) = sprintf('  %s average: %d', h.lambdas(i), meanIntensity);
             cnt = cnt + 1;
