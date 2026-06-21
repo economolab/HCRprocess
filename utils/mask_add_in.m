@@ -1,6 +1,6 @@
 % flip the z direction of a 3-D image (tif) using imageJ, expects a full 
 % file path, will overwrite the original file with the same name
-function mask_add_in(masks_im,ccf_im,reg_im,embed_ims)
+function mask_add_in(ccf_im,reg_im,embed_ims)
     
     [imVol, info] = read_tiff(reg_im);
     ccf_vol = read_tiff(ccf_im);
@@ -30,11 +30,11 @@ function mask_add_in(masks_im,ccf_im,reg_im,embed_ims)
         overlayPlane(volMask(:,:,i)) = overlayIntensity;
         volExport(:,:,i) = imblend(overlayPlane,imVol(:,:,i),ForegroundOpacity=0.1);
     end
-
-    [filepath,name,~] = fileparts(masks_im);
-    uniq_id = split(name,'_');
-    uniq_id = uniq_id{1};
-    path = fullfile(filepath,[uniq_id '_masks_overlay.tif']);
+    
+    [filepath,reg_name,~] = fileparts(reg_im);
+    [filepath,~,~] = fileparts(filepath);
+    [post_filepath,~,~] = fileparts(filepath);
+    path = fullfile(post_filepath,'masks',[reg_name '_ccf_overlay.tif']);
     t = Tiff(path, 'w8');
 
     sz = size(volExport);
@@ -85,7 +85,7 @@ function mask_add_in(masks_im,ccf_im,reg_im,embed_ims)
     end
     
     [~,embed_im1,ext] = fileparts(embed_ims{1});
-    merge_str = strcat("c1=",[uniq_id '_masks_overlay.tif']," c2=", ...
+    merge_str = strcat("c1=",[reg_name '_ccf_overlay.tif']," c2=", ...
         embed_im1,ext);
 
     if num_embed_ims == 2
@@ -96,10 +96,21 @@ function mask_add_in(masks_im,ccf_im,reg_im,embed_ims)
     merge_str = strcat(merge_str," create");
 
     ij.IJ.run("Merge Channels...", merge_str);
+    
+    [~,embed_name1,~] = fileparts(embed_ims{1});
+    switch num_embed_ims
+        case 1
+            export_name = strcat(reg_name,'_',embed_name1);
+        case 2
+            [~,embed_name2,~] = fileparts(embed_ims{2});
+            export_name = strcat(reg_name,'_',embed_name1,'_',embed_name2);
+    end
 
-    savef = fullfile(filepath,[uniq_id '_masks_overlay_embed_genes.tif']);
+    savef = fullfile(post_filepath,'masks',[export_name '_ccf_overlay.tif']);
     ij.IJ.saveAs("Tiff", savef);
     ij.IJ.run("Close All");
     ij.IJ.run("Quit","");
+
+    delete(path)
 
 end
