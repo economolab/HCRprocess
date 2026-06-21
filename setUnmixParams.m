@@ -23,6 +23,7 @@ pcol = [0.9 0.9 0.9];
 h.fig = figure(427);
 h.ax = axes();
 
+
 set(h.fig, 'Units', 'pixels', 'Position', [100 100 1800 850], 'Color', bcol);
 set(h.fig, 'CloseRequestFcn', @close_req);
 
@@ -32,7 +33,7 @@ d = uiprogressdlg(fig,'Title','Loading...', ...
     'Indeterminate','on');
 
 guidata(h.fig, h);
-loadTifStack(h.fig)
+loadTifStack(h.fig);
 cropStack(h.fig, autoload);
 h = guidata(h.fig);
 
@@ -217,6 +218,8 @@ imFns = findImageFiles(h.parent, '.tif');
 
 guidata(h.fig, h);
 updateImage([], [], h.fig);
+
+addPixelIntensity(h.fig);
 
 if strcmp(h.mode,'write')
     loadButtonFcn([],[],gcf)
@@ -762,56 +765,6 @@ else
     delete(fig)
     
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
