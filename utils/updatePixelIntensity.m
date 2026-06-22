@@ -40,7 +40,7 @@ function updatePixelIntensity(fig)
 
     try
         for i=1:nChan
-            val = h.tiffstack(y+1, x+1, i, h.plane);
+            val = h.stack(y+1, x+1, i, h.plane);
             str(i+1) = sprintf('  %s intensity: %d', h.lambdas(i), val);
         end
     catch
