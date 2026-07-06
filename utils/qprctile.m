@@ -11,7 +11,7 @@ for i = 1:length(p)
     ind1 = floor(len*p(i));
     ind2 = ind1+1;
 
-    if (ind1 == len)
+    if (ind1 == len) 
         pctval(i) = double(sortv(end));
     elseif (ind1<1)
         pctval(i) = double(sortv(1));
