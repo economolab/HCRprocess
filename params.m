@@ -4,7 +4,7 @@ function out = params(in)
     
     d = dictionary();
     
-    d('abcDir') = 'C:\Users\jpv88\Documents\allen-brain-cell-atlas';
+    d('abcDir') = 'D:\allen_brain_atlas';
     d('fijiScriptsDir') = 'C:\Users\ECONOM~1\DOCUME~1\FIJI-W~1\Fiji.app\scripts';
     d('HCRprocessEnv') = 'HCRprocess';
 
