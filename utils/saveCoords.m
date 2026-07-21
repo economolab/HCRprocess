@@ -23,7 +23,16 @@ function saveCoords(fig)
     if isfield(h, 'selectionBox') && isvalid(h.selectionBox)
         delete(h.selectionBox);
     end
-    
+
+    %clear current button press functions
+    % fig.WindowButtonDownFcn = [];
+    % fig.WindowButtonUpFcn = [];
+    % fig.WindowButtonMotionFcn = [];
+
+    % h.selectionBox = drawpolygon(ax);
+    % 
+    % wait(h.selectionBox)
+
     % create new rectangle at click point with size 1x1 to start
     h.selectionBox = rectangle(h.ax, ...
         'Position',  [x, y, 1, 1], ...

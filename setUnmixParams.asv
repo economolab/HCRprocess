@@ -23,6 +23,7 @@ pcol = [0.9 0.9 0.9];
 h.fig = figure(427);
 h.ax = axes();
 
+
 set(h.fig, 'Units', 'pixels', 'Position', [100 100 1800 850], 'Color', bcol);
 set(h.fig, 'CloseRequestFcn', @close_req);
 
@@ -32,7 +33,7 @@ d = uiprogressdlg(fig,'Title','Loading...', ...
     'Indeterminate','on');
 
 guidata(h.fig, h);
-loadTifStack(h.fig)
+loadTifStack(h.fig);
 cropStack(h.fig, autoload);
 h = guidata(h.fig);
 
@@ -112,8 +113,11 @@ for i = 1:h.Nchans
         ,'BackgroundColor',pcol-0.1,'Position',[xoff+132 yoff+10 5 150],'HorizontalAlignment','Right');
 end
 
+cLabelPos = h.chanLabel_edit(h.Nchans).Position; 
+
+%old position, 550 150 200 24, units in pixels
 h.hilo_checkbox = uicontrol('parent', h.clim_pan, 'Style', 'checkbox', 'Value', 0,'Units','pixels' ...
-    ,'BackgroundColor',pcol,'Position',[550 150 200 24],'HorizontalAlignment','Right', ...
+    ,'BackgroundColor',pcol,'Position',[cLabel cPos(2)+0.2 200 24],'HorizontalAlignment','Right', ...
     'Callback', {@updateImage,gcf}, 'BackgroundColor', pcol, 'String', 'HiLo LUT', 'FontSize', 10);
 
 h.save_button = uicontrol('Style', 'pushbutton',  'Units', 'Normalized', 'Position', ...
@@ -137,17 +141,15 @@ h.unmixTable = uitable(h.fig, 'Units', 'Normalized', 'Position', [0.59 0.475 0.2
     'Offset', 'Scale', 'Enable'}, 'Data', data, 'ColumnEditable', [true, true, true, true, true]);
 
 uicontrol('Style', 'text', 'Units', 'Normalized', 'String', 'Lipo Table', ...
-    'BackgroundColor',bcol-0.1,'Position',[0.59 0.445 0.135, 0.025],'HorizontalAlignment','Center', ...
+    'BackgroundColor',bcol-0.1,'Position',[0.59 0.44 0.225, 0.025],'HorizontalAlignment','Center', ...
     'FontSize', 12, 'FontWeight', 'Bold');
 
-data = cell(10, 5);
+data = cell(10, 2);
 data(:,:) = {0};
 data(:,2) = {true};
 
 h.lipoTable = uitable(h.fig, 'Units', 'Normalized', 'Position', [0.59 0.3 0.225 0.135], ...
     'ColumnWidth', {80, 80}, 'ColumnName', {'Scale', 'Enable'}, 'Data', data, 'ColumnEditable', [true, true]);
-
-
 
 uicontrol('Style', 'text', 'Units', 'Normalized', 'String', 'Image shifts', ...
     'BackgroundColor',bcol-0.1,'Position',[0.68 0.1 0.135, 0.025],'HorizontalAlignment','Center', ...
@@ -219,6 +221,8 @@ imFns = findImageFiles(h.parent, '.tif');
 
 guidata(h.fig, h);
 updateImage([], [], h.fig);
+
+addPixelIntensity(h.fig);
 
 if strcmp(h.mode,'write')
     loadButtonFcn([],[],gcf)
@@ -708,17 +712,22 @@ if get(h.lipo_checkbox, 'Value')
 
     % set negative pixels equal to 0
     bgim(bgim<0) = 0;
+    bgim(isnan(bgim)) = 0;
     
     % iterate through channels
     for i = 1:numel(h.lipo.targetchans)
         chan = h.lipo.targetchans(i);
+
+        bg_tosub = bgim .* bg(:,:,chan);
+
+        bg_tosub = bg_tosub.*h.lipoTable.Data{chan,1};
         
         % scale background image by lipofuscin intensity
         % bg = bgim.*h.lipo.amp(chan);
         
-        lipo = bgim .* bg(:,:,i);
-        newim = h.stack(:,:,chan) - lipo;
-        newim(isnan(newim)) = 0;
+        % lipo = bgim .* bg(:,:,i);
+        % newim = h.stack(:,:,chan) - lipo;
+        % newim(isnan(newim)) = 0;
 
         % deltaF = (h.stack(:,:,chan) - bg(:,:,i)) ./ bg(:,:,i);
         % deltaF = deltaF - bgim;
@@ -728,8 +737,8 @@ if get(h.lipo_checkbox, 'Value')
         % newim(isnan(newim)) = 0;
 
         % subtract from image
-        % newstack(:,:,chan) = h.stack(:,:,chan) - bg;
-        newstack(:,:,chan) = newim;
+        newstack(:,:,chan) = h.stack(:,:,chan) - bg_tosub;
+        % newstack(:,:,chan) = newim;
         
     end
 end
@@ -759,56 +768,6 @@ else
     delete(fig)
     
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
