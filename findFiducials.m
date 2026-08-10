@@ -98,8 +98,8 @@ addlistener(h.point(2),"MovingROI",@(src,pos) movebothpoints(gcf, 2));
 h.plus(1) = plot(h.ax(3), round(size(h.fixed, 3)./2), round(size(h.fixed, 1)./2), 'g+');
 h.plus(2) = plot(h.ax(4), round(size(h.moving, 3)./2), round(size(h.moving, 1)./2), 'm+');
 
-set(h.ax(1), 'Position', [0.005 0.375 0.44 0.625]); 
-set(h.ax(2), 'Position', [0.45 0.375 0.44 0.625]);
+set(h.ax(1), 'Position', [0.005 0.375 0.44 0.6]); 
+set(h.ax(2), 'Position', [0.45 0.375 0.44 0.6]);
 set(h.ax(3), 'Position', [0.07 0.05 0.3 0.25]);
 set(h.ax(4), 'Position', [0.52 0.05 0.3 0.25]);
 
