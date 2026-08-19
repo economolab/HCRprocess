@@ -23,7 +23,7 @@ function saveCoords(fig)
     if isfield(h, 'selectionBox') && isvalid(h.selectionBox)
         delete(h.selectionBox);
     end
-
+-
     %clear current button press functions
     % fig.WindowButtonDownFcn = [];
     % fig.WindowButtonUpFcn = [];
