@@ -27,21 +27,28 @@ data_f, reg_f, bin_f, mask_f, mask_im_f = matrix_utils.build_paths(data_dir,
                                                                    exp_name,
                                                                    mode='curated')
 
+remove_b = True
+
 #%% load everything
 
 mask_df = pd.read_csv(os.path.join(data_dir,mask_f))
 bin_df = pd.read_csv(os.path.join(data_dir,bin_f))
 cell_df = matrix_utils.build_cell_df(mask_df, bin_df)
 
-data_f = matrix_utils.remove_label_channels(data_f)
 
+data_f = matrix_utils.remove_label_channels(data_f)
 quant_genes = [f[3:-7] for f in data_f]
-quant_genes.remove('slc17a6')
-quant_genes.remove('slc32a1')
-quant_genes.remove('slc5a7')
-data_f = data_f[data_f != 'r1_slc17a6488.tif']
-data_f = data_f[data_f != 'r2_slc32a1488.tif']
-data_f = data_f[data_f != 'r4_slc5a7488.tif']
+
+if remove_b:
+    cell_df = cell_df.loc[:, ~cell_df.columns.str.contains('_b')]
+else:
+    quant_genes.remove('slc17a6')
+    quant_genes.remove('slc32a1')
+    quant_genes.remove('slc5a7')
+    data_f = data_f[data_f != 'r1_slc17a6488.tif']
+    data_f = data_f[data_f != 'r2_slc32a1488.tif']
+    data_f = data_f[data_f != 'r4_slc5a7488.tif']
+
 
 for quant_gene in quant_genes:
     cell_df.insert(cell_df.shape[1],quant_gene,np.zeros(cell_df.shape[0]))
@@ -49,25 +56,7 @@ for quant_gene in quant_genes:
 cell_df['Cell ID'] = cell_df['Cell ID'].astype(str)
 for i in range(cell_df.shape[0]):
     cell_df.loc[i,"Cell ID"] = exp_name + '_' + uniq_id + '_' + str(i+1)
-
     
-#%% load images
-
-quant_gene_ims = []
-
-for i in tqdm(range(len(data_f)),desc='Loading images...'):
-    im = tifffile.imread(os.path.join(data_dir,data_f[i]))
-    im = np.transpose(im,[1,2,0])
-    im[np.isnan(im)] = 0
-    quant_gene_ims.append(im)
-    
-masks_im = tifffile.imread(mask_im_f)
-masks_im = np.transpose(masks_im,[1,2,0])
-
-pp_masks_im = filter_data.filt_masks_im_pp(masks_im, cell_df)
-row_slice, col_slice = img_utils.make_crop_slices(pp_masks_im)
-pp_masks_im_crop = pp_masks_im [row_slice, col_slice, :]
-
 gene_to_fluo = {
     "phox2b": "Alexa Fluor 594",
     "ralyl": "Alexa Fluor 647",
@@ -87,48 +76,233 @@ gene_to_fluo = {
     "zfhx3": "Alexa Fluor 546"
     }
 
-alcam_thresh = np.load("alcam_thresh_s03L.npy")
-alcam_thresh = 6660
-celf2_thresh = np.load("celf2_thresh_s03L.npy")
-celf2_thresh = 4400
-ebf3_thresh = np.load("ebf3_thresh_s03L.npy")
-ebf3_thresh = 4840
-meis2_thresh = np.load("meis2_thresh_s03L.npy")
-meis2_thresh = 5540
-pcp4_thresh = np.load("pcp4_thresh_s03L.npy")
-pcp4_thresh = 6400
-phox2b_thresh = np.load("phox2b_thresh_s03L.npy")
-phox2b_thresh = 6330
-ralyl_thresh = np.load("ralyl_thresh_s03L.npy")
-ralyl_thresh = 4420
-robo1_thresh = np.load("robo1_thresh_s03L.npy")
-robo1_thresh = 3915
-rph3a_thresh = np.load("rph3a_thresh_s03L.npy")
-rph3a_thresh = 7160
-syt1_thresh = np.load("syt1_thresh_s03L.npy")
-syt1_thresh = 5870
-tenm2_thresh = np.load("tenm2_thresh_s03L.npy")
-tenm2_thresh = 4064
-tshz2_thresh = np.load("tshz2_thresh_s03L.npy")
-tshz2_thresh = 5290
-zfhx3_thresh = np.load("zfhx3_thresh_s03L.npy")
-zfhx3_thresh = 5640
-
-thresholds = [phox2b_thresh, ralyl_thresh, tenm2_thresh, ebf3_thresh, pcp4_thresh,
-              tshz2_thresh, alcam_thresh, celf2_thresh, meis2_thresh, rph3a_thresh,
-              robo1_thresh, syt1_thresh, zfhx3_thresh]
-
-def plot_thresholds(thresholds, gene):
     
-    plt.plot(thresholds)
-    plt.xlabel("Z-index")
-    plt.ylabel("Bigfish threshold")
-    plt.title(gene)
+#%% load images
+
+quant_gene_ims = []
+
+for i in tqdm(range(len(data_f)),desc='Loading images...'):
+    im = tifffile.imread(os.path.join(data_dir,data_f[i]))
+    im = np.transpose(im,[1,2,0])
+    im[np.isnan(im)] = 0
+    quant_gene_ims.append(im)
+    
+quant_gene_ims = dict(zip(quant_genes, quant_gene_ims))
+    
+masks_im = tifffile.imread(mask_im_f)
+masks_im = np.transpose(masks_im,[1,2,0])
+
+pp_masks_im = filter_data.filt_masks_im_pp(masks_im, cell_df)
+row_slice, col_slice = img_utils.make_crop_slices(pp_masks_im)
+
+#%%
+
+from bigfish.stack import log_filter
+from bigfish.detection.spot_detection import local_maximum_detection, spots_thresholding
+from kneed import KneeLocator
+
+from scipy.interpolate import UnivariateSpline
+
+def set_thresh(image, fluo, min_spots=int(100), max_spots=int(1e5), 
+               num_evals=1000, gene=None, save_threshs=True):
+    
+    psf_sigma = img_utils.calc_psf_sigma(fluo)
+    voxel_size = 325
+    sigma = psf_sigma / voxel_size
+    minimum_distance = sigma
+     
+    im_filtered = np.zeros_like(image)
+    n_planes = image.shape[2]
+     
+    for k in tqdm(range(n_planes)):
+        im_filtered[:,:,k] = log_filter(image[:,:,k], sigma)
+    
+    final_thresh = []
+    for k in tqdm(range(n_planes)):
+        
+        spots_mask = local_maximum_detection(im_filtered[:,:,k], minimum_distance)
+        min_px = np.min(im_filtered[:,:,k])
+        max_px = np.max(im_filtered[:,:,k])
+        threshs = np.linspace(min_px, max_px, num_evals)
+        
+        num_spots = []
+        for thresh in tqdm(threshs):
+            spots, _ = spots_thresholding(im_filtered[:,:,k], spots_mask, thresh, remove_duplicate=False)
+            num_spots.append(len(spots))
+            
+        thresh_spots = np.column_stack((threshs, num_spots))
+        _, idx = np.unique(thresh_spots[::-1, 1], return_index=True)
+        orig_idx = thresh_spots.shape[0] - 1 - idx
+        thresh_spots = thresh_spots[np.sort(orig_idx), :]
+        
+        thresh_spots = thresh_spots[thresh_spots[:,1] >= min_spots, :]
+        thresh_spots = thresh_spots[thresh_spots[:,1] <= max_spots, :]
+        
+        kl = KneeLocator(thresh_spots[:,0], thresh_spots[:,1], curve="convex", direction="decreasing")
+        final_thresh.append(kl.knee)
+        
+    z_plane = np.arange(n_planes)
+    smooth_thresh = matrix_utils.fit_threshold_curve(z_plane, np.array(final_thresh), plot_fit=False)
+    
+    if save_threshs:
+        save_path = os.path.join(data_dir, gene + '_threshs.csv')
+        np.savetxt(save_path, smooth_thresh, delimiter=',')
+    
+    return smooth_thresh
+    
+    
+def count_spots_per_cell(cell_df, gene, fluo, image, pp_masks_im, threshs, return_num_spots=False):
+    
+    n_planes = image.shape[2]
+    
+    num_spots = []
+    cell_spots_dict = {}
+    for cell_id in cell_df['Mask ID'].values:
+        cell_spots_dict[cell_id] = 0
+        
+    for k in tqdm(range(n_planes)):
+        
+        spots = matrix_utils.count_spots(image[:,:,k], fluo, thresh=threshs[k])
+        num_spots.append(len(spots))
+        
+        masks_at_spots = pp_masks_im[:,:,k][spots[:,0], spots[:,1]]
+        unique_masks, unique_counts = np.unique(masks_at_spots, return_counts=True)
+        keep = (unique_masks != 0)
+        unique_masks, unique_counts = unique_masks[keep], unique_counts[keep]
+        
+        if len(unique_masks) != 0:
+            for idx, mask in enumerate(unique_masks):
+                cell_spots_dict[mask] += unique_counts[idx]
+        
+    cell_df[gene] = list(cell_spots_dict.values())
+    
+    if return_num_spots:
+        return cell_df, num_spots
+    else:
+        return cell_df
+    
+
+def quantify_gene(cell_df, gene, image, pp_masks_im, load_thresh=True, crop_im=True, return_num_spots=False):
+    
+    fluo = gene_to_fluo[gene]
+    
+    if crop_im:
+        image = image[row_slice, col_slice, :]
+        pp_masks_im = pp_masks_im[row_slice, col_slice, :]
+    
+    image = img_utils.correct_depth_attenuation(image, 
+                                                scale_to_log_filter=True,
+                                                plot_fit=False,
+                                                fluo=fluo)
+    
+    if load_thresh:
+        threshs_path = os.path.join(data_dir, gene + '_threshs.csv')
+        if os.path.exists(threshs_path):
+            threshs = np.loadtxt(threshs_path, delimiter=',')
+        else:
+            threshs = set_thresh(image, fluo, gene=gene)
+    else:
+        threshs = set_thresh(image, fluo, gene=gene)
+    
+    if return_num_spots:
+        cell_df, num_spots = count_spots_per_cell(cell_df, gene, fluo, image, pp_masks_im, threshs, return_num_spots=True)
+        return cell_df, num_spots
+    else:
+        cell_df = count_spots_per_cell(cell_df, gene, fluo, image, pp_masks_im, threshs)
+        return cell_df
+    
+    
+
+#%% 
+
+genes_to_quant = ['phox2b', 'ralyl', 'zfhx3']
+
+for gene in quant_genes:
+    
+    cell_df = quantify_gene(cell_df, gene, quant_gene_ims[gene], pp_masks_im, crop_im=True)
+    
+#%%
+
+from matplotlib.ticker import MaxNLocator
+
+def plot_num_spots(num_spots, gene):
+    z_plane = np.arange(len(num_spots)) + 1
+
+    fig, ax = plt.subplots(figsize=(7, 4.5), dpi=120)
+
+    ax.plot(
+        z_plane, num_spots,
+        color='#2E86AB', linewidth=2.2,
+        marker='o', markersize=5,
+        markerfacecolor='white', markeredgewidth=1.5,
+        zorder=3
+    )
+    ax.fill_between(z_plane, num_spots, color='#2E86AB', alpha=0.08)
+
+    ax.set_xlabel('Z-plane', fontsize=11, fontweight='medium')
+    ax.set_ylabel('Number of spots detected', fontsize=11, fontweight='medium')
+    ax.set_title(gene, fontsize=14, fontweight='bold', pad=12, style='italic')
+
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=10))
+    ax.grid(True, linestyle='--', alpha=0.4, zorder=0)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_ylim(bottom=0)
+
+    fig.tight_layout()
+    plt.show()
+    
+plot_num_spots(num_spots, 'tenm2')
+    
+    
+    
+#%%
+
+cell_df.to_csv(exp_name + '_' + uniq_id + '_new_spot_all_cells' + '.csv',
+               index=False)
+    
+#%%
+
+import tifffile
+
+def make_exp_img(pp_masks_im, cell_df, gene):
+    
+    max_mask = np.max(pp_masks_im)
+    masks = cell_df['Mask ID'].values
+    gene_exp = cell_df[gene].values
+    
+    lut = dict(zip(np.arange(max_mask), np.full(max_mask + 1, 0, dtype=np.uint16)))
+    for i, mask in enumerate(masks):
+        lut[mask] = np.uint16(gene_exp[i])
+        
+    array_lut = np.full(max_mask + 1, 0, dtype=np.uint16)
+    array_lut[np.fromiter(lut.keys(), dtype=np.uint16)] = np.fromiter(lut.values(), dtype=np.uint16)
+        
+    exp_img = array_lut[pp_masks_im]
+    exp_img = np.moveaxis(exp_img, 2, 0)
+    
+    tifffile.imwrite(
+        gene + '.tif', 
+        exp_img,
+        metadata={'axes': 'ZYX'},
+        imagej=True)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
 
 #%% threshold finding
 
-i = 6
-quant_gene = 'alcam'
+i = 0
+quant_gene = 'phox2b'
+fluo = 'Alexa Fluor 594'
 
 fluo = gene_to_fluo[quant_gene]
 intensity_image = np.copy(quant_gene_ims[i])
@@ -182,6 +356,72 @@ for i, quant_gene in enumerate(quant_genes):
                 cell_spots_dict[val] += unique_counts[idx]
         
     cell_df[quant_gene] = list(cell_spots_dict.values())
+    
+#%% threshold finding
+
+i = 1
+quant_gene = 'ralyl'
+fluo = 'Alexa Fluor 647'
+
+fluo = gene_to_fluo[quant_gene]
+intensity_image = np.copy(quant_gene_ims[i])
+intensity_image_crop = intensity_image[row_slice, col_slice, :]
+intensity_image_crop = img_utils.correct_depth_attenuation(intensity_image_crop, 
+                                                      scale_to_log_filter=True,
+                                                      plot_fit=True,
+                                                      fluo=fluo)
+image = intensity_image_crop
+
+#%%
+
+
+    
+
+    
+        
+
+    
+    
+#%%
+
+
+alcam_thresh = np.load("alcam_thresh_s03L.npy")
+alcam_thresh = 6660
+celf2_thresh = np.load("celf2_thresh_s03L.npy")
+celf2_thresh = 4400
+ebf3_thresh = np.load("ebf3_thresh_s03L.npy")
+ebf3_thresh = 4840
+meis2_thresh = np.load("meis2_thresh_s03L.npy")
+meis2_thresh = 5540
+pcp4_thresh = np.load("pcp4_thresh_s03L.npy")
+pcp4_thresh = 6400
+phox2b_thresh = np.load("phox2b_thresh_s03L.npy")
+phox2b_thresh = 6330
+ralyl_thresh = np.load("ralyl_thresh_s03L.npy")
+ralyl_thresh = 4420
+robo1_thresh = np.load("robo1_thresh_s03L.npy")
+robo1_thresh = 3915
+rph3a_thresh = np.load("rph3a_thresh_s03L.npy")
+rph3a_thresh = 7160
+syt1_thresh = np.load("syt1_thresh_s03L.npy")
+syt1_thresh = 5870
+tenm2_thresh = np.load("tenm2_thresh_s03L.npy")
+tenm2_thresh = 4064
+tshz2_thresh = np.load("tshz2_thresh_s03L.npy")
+tshz2_thresh = 5290
+zfhx3_thresh = np.load("zfhx3_thresh_s03L.npy")
+zfhx3_thresh = 5640
+
+thresholds = [phox2b_thresh, ralyl_thresh, tenm2_thresh, ebf3_thresh, pcp4_thresh,
+              tshz2_thresh, alcam_thresh, celf2_thresh, meis2_thresh, rph3a_thresh,
+              robo1_thresh, syt1_thresh, zfhx3_thresh]
+
+def plot_thresholds(thresholds, gene):
+    
+    plt.plot(thresholds)
+    plt.xlabel("Z-index")
+    plt.ylabel("Bigfish threshold")
+    plt.title(gene)
     
 #%%
 

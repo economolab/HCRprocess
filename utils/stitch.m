@@ -1,6 +1,21 @@
-function stitch(file, d, file_frac)
-   
+function stitch(file, shadingCorrection, fusionMethod, d, file_frac)
+
+    if shadingCorrection
+        pyenv('ExecutionMode', 'OutOfProcess');
+        cmd = sprintf("shadingCorrection.py '%s'", file);
+        pyrunfile(cmd)
+        [filepath, name, ~] = fileparts(file);
+        file = fullfile(filepath, [name, '.tiff']);
+    end
+
     java.lang.Runtime.getRuntime.gc;
+
+    switch fusionMethod
+        case 'Max. Intensity'
+            fusion_str = " fusion_method=[Max. Intensity] ";
+        case 'Linear Blending'
+            fusion_str = " fusion_method=[Linear Blending] ";
+    end
     
     ImageJ
 
@@ -10,7 +25,7 @@ function stitch(file, d, file_frac)
         file + ...
         " multi_series_file=" + ...
         file + ...
-        " fusion_method=[Max. Intensity] " + ...
+        fusion_str + ...
         "regression_threshold=0.30 " + ...
         "max/avg_displacement_threshold=2.50 " + ...
         "absolute_displacement_threshold=3.50 " + ...
@@ -22,6 +37,9 @@ function stitch(file, d, file_frac)
     [filepath,name,~] = fileparts(file);
     savef = filepath(1:end-4);
     savef = fullfile(savef,'stitch',name);
+    if strcmp(fusionMethod,'Linear Blending')
+        savef = strcat(savef,'_lin');
+    end
     savef = strcat(savef,'.tif');
 
     ij.IJ.saveAs("Tiff", savef);
@@ -32,6 +50,10 @@ function stitch(file, d, file_frac)
 
     junk = fullfile(filepath,'TileConfiguration.registered.txt');
     delete(junk)
+
+    if shadingCorrection
+        delete(file)
+    end
 
     d.Message = strcat(file_frac, ' Deleting empty slices...');
 
@@ -62,6 +84,5 @@ function stitch(file, d, file_frac)
     d.Message = strcat(file_frac, ' Saving...');
 
     write_tiff(savef, V, info)
-    % write_tiff_ij(savef)
 
 end

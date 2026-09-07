@@ -40,7 +40,7 @@ salt_correction_5X_SSC = mt.salt_correction(Na=975)
 salt_correction_2X_SSC = mt.salt_correction(Na=390)
 salt_correction_PBS = mt.salt_correction(Na=137, K=2.7)
 
-fmd = 45
+fmd = 65
 salt_correction_5X_SSC_fmd = mt.salt_correction(Na=975*((100-fmd)/100))
 salt_correction_2X_SSC_fmd = mt.salt_correction(Na=390*((100-fmd)/100))
 salt_correction_PBS_fmd = mt.salt_correction(Na=137*((100-fmd)/100), K=2.7*((100-fmd)/100))
@@ -93,7 +93,7 @@ probe_seqs = [''.join(c for c in s if not c.islower()) for s in probe_seqs]
 
 probeSeqsTm = [mt.Tm_NN(seq, 
                       nn_table=mt.R_DNA_NN1, 
-                      saltcorr=salt_correction_2X_SSC) for seq in probe_seqs]
+                      saltcorr=salt_correction_2X_SSC_fmd) for seq in probe_seqs]
 
 newProbeSeqsTm = [mt.chem_correction(Tm,fmd=65) for Tm in probeSeqsTm]
 

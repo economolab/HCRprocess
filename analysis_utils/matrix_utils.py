@@ -4,6 +4,7 @@
 """
 
 import bigfish.detection as detection
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -11,6 +12,13 @@ import os
 
 from analysis_utils import img_utils
 from tqdm import tqdm
+from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+from sklearn.linear_model import RANSACRegressor
+from sklearn.preprocessing import MinMaxScaler
+
+import anndata as ad
+import scanpy as sc
 
 def derive_params(data_dir):
     
@@ -168,6 +176,143 @@ def find_zstack_thresh_bigfish(im, fluo):
     thresholds_bigfish = np.array(thresholds_bigfish)
     
     return thresholds_bigfish
+
+
+class QuadraticRegressor(BaseEstimator, RegressorMixin):
+    """
+    Fits a quadratic function y = a*x^2 + b*x + c using least squares.
+
+    Works with a single feature (1D x). For multiple features it fits
+    each feature's quadratic term plus a shared intercept via least squares
+    on [x^2, x, 1].
+    """
+
+    def __init__(self):
+        pass
+
+    def fit(self, X, y):
+        X, y = check_X_y(X, y, ensure_2d=True)
+        if X.shape[1] != 1:
+            raise ValueError(
+                "QuadraticRegressor expects a single feature column (X.shape[1] == 1). "
+                "Reshape your data with X.reshape(-1, 1) if needed."
+            )
+
+        x = X[:, 0]
+        # Design matrix: [x^2, x, 1]
+        A = np.column_stack([x**2, x, np.ones_like(x)])
+
+        # Least squares solve
+        coeffs, residuals, rank, singular_values = np.linalg.lstsq(A, y, rcond=None)
+
+        self.a_, self.b_, self.c_ = coeffs
+        self.coef_ = np.array([self.a_, self.b_])
+        self.intercept_ = self.c_
+        self.n_features_in_ = 1
+
+        return self
+
+    def predict(self, X):
+        check_is_fitted(self, ["a_", "b_", "c_"])
+        X = check_array(X, ensure_2d=True)
+        x = X[:, 0]
+        return self.a_ * x**2 + self.b_ * x + self.c_
+
+    def score(self, X, y):
+        # R^2 score (default from RegressorMixin uses this via sklearn's r2_score)
+        from sklearn.metrics import r2_score
+        return r2_score(y, self.predict(X))
+    
+def fit_threshold_curve(z_plane, threshs, plot_fit=False):
+    
+    reg = RANSACRegressor(estimator=QuadraticRegressor(),min_samples=0.5, max_trials=int(1e4))
+    reg.fit(z_plane.reshape(-1, 1), threshs)
+    smooth_thresh = reg.estimator_.predict(z_plane.reshape(-1,1))
+    
+    if plot_fit:
+        
+        plt.figure()
+        plt.xlabel("Z-index")
+        plt.ylabel("Spot counting threshold")
+        plt.plot(z_plane, threshs, label='data')
+        plt.scatter(z_plane[~reg.inlier_mask_], threshs[~reg.inlier_mask_], c='r', marker='x')
+        plt.scatter(z_plane[reg.inlier_mask_], threshs[reg.inlier_mask_], c='g', marker='o')
+        plt.plot(z_plane, reg.estimator_.predict(z_plane.reshape(-1, 1)), label='fitted')
+        plt.legend()
+    
+    return smooth_thresh
+
+def embed_cell_df(cell_df, n_components=2, embed="pca", 
+                  ref_mask=None, norm_total=False, log_norm=False, z_score=True, 
+                  clip_embedding=True, norm_embedding=True,
+                  min_embed_pct=5, max_embed_pct=95):
+    
+    adata = ad.AnnData(cell_df.copy())
+    
+    if norm_total:
+        sc.pp.normalize_total(adata)
+    if log_norm:
+        sc.pp.log1p(adata)
+    if z_score:
+        sc.pp.scale(adata)
+    
+    match embed:
+        case "umap":
+            obsm_key = "X_umap"
+        case "pca":
+            obsm_key = "X_pca"
+        case _:
+            raise ValueError(f"unknown embed: {embed!r}")
+    
+    if ref_mask is not None:
+        
+        adata_ref = adata[ref_mask].copy()
+        adata_query = adata[~ref_mask].copy()
+        
+        match embed:
+            case "umap":
+                sc.pp.pca(adata_ref)
+                sc.pp.neighbors(adata_ref)
+                sc.tl.umap(adata_ref, n_components=n_components)
+            case "pca":
+                sc.pp.pca(adata_ref, n_comps=n_components)
+                sc.pp.neighbors(adata_ref)
+        
+        sc.tl.ingest(adata_query, adata_ref, embedding_method=embed)
+        
+        adata_ref.obs["ref_or_query"] = "reference"
+        adata_query.obs["ref_or_query"] = "query"
+        adata = ad.concat(
+            {"reference": adata_ref, "query": adata_query},
+            label="ref_or_query",
+            index_unique=None,
+        )
+        adata = adata[cell_df.index].copy()
+        
+    else:
+            
+        match embed:
+            case "umap":
+                sc.tl.pca(adata)
+                sc.pp.neighbors(adata)
+                sc.tl.umap(adata, n_components=n_components)
+            case "pca":
+                sc.tl.pca(adata, n_comps=n_components)
+    
+    cell_embedding = adata.obsm[obsm_key]
+    
+    if clip_embedding:
+        embed_mins = np.percentile(cell_embedding, min_embed_pct, axis=0)
+        embed_maxs = np.percentile(cell_embedding, max_embed_pct, axis=0)
+        cell_embedding = np.clip(cell_embedding, a_min=embed_mins, a_max=embed_maxs)
+        
+    if norm_embedding:
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        cell_embedding = scaler.fit_transform(cell_embedding)
+    
+    return cell_embedding
+
+
     
     
     

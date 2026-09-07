@@ -55,3 +55,4 @@ function filter_masks_ccf(masks_im,ccf_im,ccf_structs)
     close(t)
 
 end
+

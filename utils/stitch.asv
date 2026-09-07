@@ -1,5 +1,12 @@
-function stitch(file, d, file_frac)
-   
+function stitch(file, shadingCorrection, fusionMethod, d, file_frac)
+
+    if shadingCorrection
+        pyenv('ExecutionMode', 'OutOfProcess')
+        cmd = sprintf("shadingCorrection.py '%s'", file);
+        pyrunfile(cmd)
+        f
+    end
+
     java.lang.Runtime.getRuntime.gc;
     
     ImageJ
@@ -62,5 +69,6 @@ function stitch(file, d, file_frac)
     d.Message = strcat(file_frac, ' Saving...');
 
     write_tiff(savef, V, info)
+    % write_tiff_ij(savef)
 
 end
