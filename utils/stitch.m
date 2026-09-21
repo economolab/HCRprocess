@@ -1,8 +1,19 @@
-function stitch(file, shadingCorrection, fusionMethod, d, file_frac)
-
+function stitch(file, shadingCorrection, fusionMethod, stripeCorrection, d, file_frac)
+    
+    arguments
+        file
+        shadingCorrection = false
+        fusionMethod = 'Max. Intensity'
+        stripeCorrection = []
+        d = []
+        file_frac = []
+    end
+    
     if shadingCorrection
         pyenv('ExecutionMode', 'OutOfProcess');
-        cmd = sprintf("shadingCorrection.py '%s'", file);
+        escapedFile = strrep(file, '\', '\\');
+        inputStr = strcat(escapedFile, ',', stripeCorrection);
+        cmd = sprintf("shadingCorrection.py '%s'", inputStr);
         pyrunfile(cmd)
         [filepath, name, ~] = fileparts(file);
         file = fullfile(filepath, [name, '.tiff']);

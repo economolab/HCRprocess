@@ -21,8 +21,23 @@ from scipy.ndimage import uniform_filter1d
 
 #%%
 
-path = sys.argv[1]
+
+inputs = sys.argv[1]
+inputs = inputs.split(',')
+
+path = inputs[0]
+correct_stripes_bool = inputs[1]
+correct_stripes_bool = [int(x) for x in correct_stripes_bool.strip('[]').split()]
+correct_stripes_bool = [bool(x) for x in correct_stripes_bool]
+
 # path = r'D:\2026-01-16_MC_SC_17\2026-01-19_r1_HCR\raw\s03L__slc17a6488_neur445_ralyl647_phox2b594_tenm2561__HCR.nd2'
+# correct_stripes = [1 0 0 0 0]
+
+# default values for aperture set to 7 are 0.17, 0.17, 0.83
+log_mid_guess = [0.17, 0.17, 0.83]
+
+# default values for 40 z planes
+log_sup_guess = [0.07, 0.07, 0.07]
 
 print('Loading image file...')
 myfile = nd2.ND2File(path)
@@ -403,14 +418,10 @@ def correct_channel(image, channel_idx, log_mid_guess, log_sup_guess,
     
     return image
 
-def correct_image(image):
+def correct_image(image, correct_stripes, log_mid_guess, log_sup_guess):
     
     print('Making copy of image...')
     corrected_image = image.copy()
-    
-    correct_stripes = [True, False, False, False, False]
-    log_mid_guess = [0.17, 0.17, 0.83]
-    log_sup_guess = [0.07, 0.07, 0.07]
     
     for i in range(n_chans):
         print(f'Correcting image channel index {i}...')
@@ -421,7 +432,7 @@ def correct_image(image):
 
 #%%
 
-corrected_image = correct_image(my_array)
+corrected_image = correct_image(my_array, correct_stripes_bool, log_mid_guess, log_sup_guess)
 
 #%% export to OME-TIFF
 # nightmarish code to export the shading corrected file as an OME-TIFF with all
