@@ -21,6 +21,8 @@ from scipy.ndimage import uniform_filter1d
 
 #%%
 
+# path = r'D:\2026-09-12_FN_SNr_2\2026-09-25_r4_HCR\raw\s01L__slc5a7488_robo1647_syt1594_zfhx3546_neur445__HCR.nd2'
+# correct_stripes_bool = [True, False, False, False, False]
 
 inputs = sys.argv[1]
 inputs = inputs.split(',')
@@ -30,14 +32,12 @@ correct_stripes_bool = inputs[1]
 correct_stripes_bool = [int(x) for x in correct_stripes_bool.strip('[]').split()]
 correct_stripes_bool = [bool(x) for x in correct_stripes_bool]
 
-# path = r'D:\2026-01-16_MC_SC_17\2026-01-19_r1_HCR\raw\s03L__slc17a6488_neur445_ralyl647_phox2b594_tenm2561__HCR.nd2'
-# correct_stripes = [1 0 0 0 0]
-
 # default values for aperture set to 7 are 0.17, 0.17, 0.83
 log_mid_guess = [0.17, 0.17, 0.83]
 
 # default values for 40 z planes
 log_sup_guess = [0.07, 0.07, 0.07]
+# log_sup_guess = [0.04, 0.04, 0.04]
 
 print('Loading image file...')
 myfile = nd2.ND2File(path)
@@ -502,6 +502,90 @@ with tifffile.TiffWriter(output_path, bigtiff=True) as tif:
             metadata={"axes": "ZCYX"},  # explicit axes, prevents shape-based auto-merge
             description=ome.to_xml() if i == 0 else None,  # OME-XML goes on IFD 0 only
         )
+
+#%%
+# #%% export just reg channel to OME-TIFF
+# # nightmarish code to export the shading corrected file as an OME-TIFF with all
+# # the requisite metadata inherited from the original nd2 file 
+
+# print('Saving just registration channel...')
+
+# reg_ch = 4
+# sizes = myfile.sizes
+# voxel = myfile.voxel_size()
+
+# positions = []
+# for loop in myfile.experiment:
+#     if loop.type == "XYPosLoop":
+#         positions = [(p.stagePositionUm.x, p.stagePositionUm.y, p.stagePositionUm.z) for p in loop.parameters.points]
+
+# assert len(positions) == sizes["P"]
+# n_z = sizes.get("Z", 1)
+
+# # --- pull out one channel from every tile -----------------------------------
+
+# axes_all = list(sizes)                      # e.g. ['P', 'Z', 'C', 'Y', 'X']
+
+# # Select the channel with a single view (no copy)
+# if "C" in axes_all:
+#     idx = [slice(None)] * len(axes_all)
+#     idx[axes_all.index("C")] = reg_ch        # integer index drops the C axis
+#     sub = corrected_image[tuple(idx)]
+#     axes_after = [a for a in axes_all if a != "C"]
+# else:
+#     sub = corrected_image
+#     axes_after = axes_all
+
+# sub = np.moveaxis(sub, axes_after.index("P"), 0)   # P first, still a view
+# tile_axes = [a for a in axes_after if a != "P"]
+# tiff_axes = "".join(tile_axes)               # e.g. 'ZYX'
+# n_tiles = sub.shape[0]
+# assert n_tiles == len(positions)
+
+# # --- OME metadata: one channel per tile --------------------------------------
+# images = []
+# first_ifd = 0
+# planes_per_series = n_z                      # one channel now
+
+# for i, (x, y, z) in enumerate(positions):
+#     pixels = Pixels(
+#         id=f"Pixels:{i}",
+#         dimension_order=Pixels_DimensionOrder.XYCZT,
+#         size_x=sizes["X"], size_y=sizes["Y"],
+#         size_c=1, size_z=n_z, size_t=1,
+#         type="uint16",                       # must match sub.dtype
+#         physical_size_x=voxel.x, physical_size_y=voxel.y,
+#         physical_size_z=voxel.z if n_z > 1 else None,
+#         channels=[Channel(id=f"Channel:{i}:0", samples_per_pixel=1)],
+#         planes=[
+#             Plane(the_c=0, the_z=zi, the_t=0,
+#                   position_x=x, position_y=y,
+#                   position_z=z + zi * voxel.z if voxel.z else z)
+#             for zi in range(n_z)
+#         ],
+#         tiff_data_blocks=[TiffData(ifd=first_ifd, plane_count=planes_per_series)],
+#     )
+#     images.append(Image(id=f"Image:{i}", name=f"tile_{i}", pixels=pixels))
+#     first_ifd += planes_per_series           # advance cumulative IFD offset
+
+# ome = OME(images=images)
+
+# # --- write -------------------------------------------------------------------
+# output_path = os.path.join(parent, f"{stem}_reg_ch.tiff")
+
+# with tifffile.TiffWriter(output_path, bigtiff=True) as tif:
+#     for i in range(n_tiles):
+#         tif.write(
+#             np.asarray(sub[i]),              # one tile at a time (also handles dask)
+#             photometric="minisblack",
+#             compression="zlib",
+#             compressionargs={"level": 1},    # faster; drop or raise if size matters
+#             contiguous=False,                # force a new series
+#             metadata={"axes": tiff_axes},    # explicit axes, prevents auto-merge
+#             description=ome.to_xml() if i == 0 else None,   # OME-XML on IFD 0 only
+#         )
+
+# print(f"Saved {output_path}")
 
 #%%
 
