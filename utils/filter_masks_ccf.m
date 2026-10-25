@@ -27,10 +27,8 @@ function filter_masks_ccf(masks_im,ccf_im,ccf_structs)
     newMasksVol = masks_Vol;
     newMasksVol(~Livol) = 0;
 
-    [filepath,name,~] = fileparts(masks_im);
-    uniq_id = split(name,'_');
-    uniq_id = uniq_id{1};
-    path = fullfile(filepath,[uniq_id '_masks_ccf.tif']);
+    [filepath,~,~] = fileparts(masks_im);
+    path = fullfile(filepath,'masks_ccf.tif');
     t = Tiff(path, 'w8');
 
     sz = size(newMasksVol);
@@ -43,7 +41,9 @@ function filter_masks_ccf(masks_im,ccf_im,ccf_structs)
     tagstruct.SamplesPerPixel = 1;
     tagstruct.Compression = Tiff.Compression.None;
     tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
-    tagstruct.ImageDescription = info.ImageDescription;
+    if isfield(info,'ImageDescription')
+        tagstruct.ImageDescription = info.ImageDescription;
+    end
     tagstruct.ExtraSamples = Tiff.ExtraSamples.Unspecified;
 
     for ii=1:sz(3)
