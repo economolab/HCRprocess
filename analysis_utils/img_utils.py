@@ -49,7 +49,12 @@ def calc_psf_sigma(fluo, NA=1.15):
     
     return sigma
 
-def correct_depth_attenuation(im, plot_fit=False, scale_to_log_filter=False, fluo=None, log_filter_zstack=False):
+def correct_depth_attenuation(im,
+                              plot_fit=False,
+                              scale_to_log_filter=False, 
+                              fluo=None, 
+                              log_filter_zstack=False,
+                              return_inliers=True):
     
     if scale_to_log_filter and fluo is None:
         raise ValueError("Must pass fluorophore argument when scaling correction to log filter")
@@ -135,7 +140,11 @@ def correct_depth_attenuation(im, plot_fit=False, scale_to_log_filter=False, flu
                     
     corrected_im = np.round(corrected_im).astype(np.uint16)
         
-    return corrected_im
+    if return_inliers:
+        return corrected_im, reg.inlier_mask_
+    else:
+        return corrected_im
+    
 
 def make_crop_slices(pp_masks_im, margin=100):
     

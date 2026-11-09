@@ -66,7 +66,7 @@ def build_paths(data_dir, uniq_id, post_dir, exp_name, mode='curated'):
             
             mask_im_dir = os.path.join(post_dir,'masks',uniq_id)
             mask_im_dir_f = np.array(os.listdir(mask_im_dir))
-            mask_im_f_mask = [check_for_tokens(f,['masks_qc_final']) for f in mask_im_dir_f]
+            mask_im_f_mask = [check_for_tokens(f,['masks_qc.tif']) for f in mask_im_dir_f]
             mask_im_f = mask_im_dir_f[mask_im_f_mask]
             mask_im_f = str(mask_im_f[0])
             mask_im_f = os.path.join(mask_im_dir, mask_im_f)
@@ -223,11 +223,14 @@ class QuadraticRegressor(BaseEstimator, RegressorMixin):
         from sklearn.metrics import r2_score
         return r2_score(y, self.predict(X))
     
-def fit_threshold_curve(z_plane, threshs, plot_fit=False):
+def fit_threshold_curve(z_plane, threshs, plot_fit=False, predict_z_plane=None):
     
     reg = RANSACRegressor(estimator=QuadraticRegressor(),min_samples=0.5, max_trials=int(1e4))
     reg.fit(z_plane.reshape(-1, 1), threshs)
-    smooth_thresh = reg.estimator_.predict(z_plane.reshape(-1,1))
+    if predict_z_plane is not None:
+        smooth_thresh = reg.estimator_.predict(predict_z_plane.reshape(-1,1))
+    else:
+        smooth_thresh = reg.estimator_.predict(z_plane.reshape(-1,1))
     
     if plot_fit:
         

@@ -18,7 +18,7 @@ from analysis_utils import matrix_utils, filter_data, img_utils
 
 #%% explicit and derived params
 
-data_dir = 'D:\\2026-01-16_MC_SC_17\\post\\core_output\\s03L'
+data_dir = 'D:\\2026-09-12_FN_SNr_2\\post\\core_output\\s01L'
 
 uniq_id, post_dir, exp_name = matrix_utils.derive_params(data_dir)
 data_f, reg_f, bin_f, mask_f, mask_im_f = matrix_utils.build_paths(data_dir, 
@@ -27,14 +27,13 @@ data_f, reg_f, bin_f, mask_f, mask_im_f = matrix_utils.build_paths(data_dir,
                                                                    exp_name,
                                                                    mode='curated')
 
-remove_b = True
+remove_b = False
 
 #%% load everything
 
 mask_df = pd.read_csv(os.path.join(data_dir,mask_f))
 bin_df = pd.read_csv(os.path.join(data_dir,bin_f))
 cell_df = matrix_utils.build_cell_df(mask_df, bin_df)
-
 
 data_f = matrix_utils.remove_label_channels(data_f)
 quant_genes = [f[3:-7] for f in data_f]
@@ -44,12 +43,13 @@ if remove_b:
 else:
     quant_genes.remove('slc17a6')
     quant_genes.remove('slc32a1')
+    quant_genes.remove('rph3a')
     quant_genes.remove('slc5a7')
     data_f = data_f[data_f != 'r1_slc17a6488.tif']
     data_f = data_f[data_f != 'r2_slc32a1488.tif']
+    data_f = data_f[data_f != 'r3_rph3a488.tif']
     data_f = data_f[data_f != 'r4_slc5a7488.tif']
-
-
+    
 for quant_gene in quant_genes:
     cell_df.insert(cell_df.shape[1],quant_gene,np.zeros(cell_df.shape[0]))
     
@@ -103,8 +103,8 @@ from kneed import KneeLocator
 
 from scipy.interpolate import UnivariateSpline
 
-def set_thresh(image, fluo, min_spots=int(100), max_spots=int(1e5), 
-               num_evals=1000, gene=None, save_threshs=True):
+def set_thresh(image, fluo, inlier_planes, min_spots=int(100), max_spots=int(1e5), 
+               num_evals=100, gene=None, save_threshs=True, plot_fit=False):
     
     psf_sigma = img_utils.calc_psf_sigma(fluo)
     voxel_size = 325
@@ -117,7 +117,8 @@ def set_thresh(image, fluo, min_spots=int(100), max_spots=int(1e5),
     for k in tqdm(range(n_planes)):
         im_filtered[:,:,k] = log_filter(image[:,:,k], sigma)
     
-    final_thresh = []
+    first_thresh = []
+    first_spots = []
     for k in tqdm(range(n_planes)):
         
         spots_mask = local_maximum_detection(im_filtered[:,:,k], minimum_distance)
@@ -139,10 +140,67 @@ def set_thresh(image, fluo, min_spots=int(100), max_spots=int(1e5),
         thresh_spots = thresh_spots[thresh_spots[:,1] <= max_spots, :]
         
         kl = KneeLocator(thresh_spots[:,0], thresh_spots[:,1], curve="convex", direction="decreasing")
+        first_thresh.append(kl.knee)
+        
+        spots, _ = spots_thresholding(im_filtered[:,:,k], spots_mask, kl.knee, remove_duplicate=False)
+        first_spots.append(len(spots))
+        
+    # spots_inlier = np.array(final_spots)[inlier_planes]
+    threshs_inlier = np.array(first_thresh)[inlier_planes]
+    
+    z_plane = np.arange(n_planes)
+    z_plane_inlier = z_plane[inlier_planes]
+    smooth_thresh = matrix_utils.fit_threshold_curve(z_plane_inlier, np.array(threshs_inlier),
+                                                     plot_fit=plot_fit, predict_z_plane=z_plane)
+    
+    # spots_std = np.std(spots_inlier)
+    # spots_mean = np.mean(spots_inlier)
+    
+    # spots_range = [spots_mean - 3*spots_std, spots_mean + 3*spots_std]
+    # spots_range = np.clip(spots_range, a_min=min_spots, a_max=max_spots)
+    
+    smooth_thresh_ptp = np.ptp(smooth_thresh)
+    threshs_range = [min(smooth_thresh) - (smooth_thresh_ptp/2), 
+                     max(smooth_thresh) + (smooth_thresh_ptp/2)]
+    
+    final_thresh = []
+    final_spots = []
+    for k in tqdm(range(n_planes)):
+        
+        spots_mask = local_maximum_detection(im_filtered[:,:,k], minimum_distance)
+        min_px = np.min(im_filtered[:,:,k])
+        max_px = np.max(im_filtered[:,:,k])
+        # threshs_range_plane = [smooth_thresh[k] - (smooth_thresh_ptp/2), smooth_thresh[k] + (smooth_thresh_ptp/2)]
+        threshs_range = np.clip(threshs_range, a_min=min_px, a_max=max_px)
+        threshs = np.linspace(threshs_range[0], threshs_range[1], num_evals)
+        
+        num_spots = []
+        for thresh in tqdm(threshs):
+            spots, _ = spots_thresholding(im_filtered[:,:,k], spots_mask, thresh, remove_duplicate=False)
+            num_spots.append(len(spots))
+            
+        thresh_spots = np.column_stack((threshs, num_spots))
+        _, idx = np.unique(thresh_spots[::-1, 1], return_index=True)
+        orig_idx = thresh_spots.shape[0] - 1 - idx
+        thresh_spots = thresh_spots[np.sort(orig_idx), :]
+        
+        # thresh_spots = thresh_spots[thresh_spots[:,1] >= spots_range[0], :]
+        # thresh_spots = thresh_spots[thresh_spots[:,1] <= spots_range[1], :]
+        
+        thresh_spots = thresh_spots[thresh_spots[:,1] >= min_spots, :]
+        thresh_spots = thresh_spots[thresh_spots[:,1] <= max_spots, :]
+        
+        kl = KneeLocator(thresh_spots[:,0], thresh_spots[:,1], curve="convex", direction="decreasing")
         final_thresh.append(kl.knee)
         
+        spots, _ = spots_thresholding(im_filtered[:,:,k], spots_mask, kl.knee, remove_duplicate=False)
+        final_spots.append(len(spots))
+        
     z_plane = np.arange(n_planes)
-    smooth_thresh = matrix_utils.fit_threshold_curve(z_plane, np.array(final_thresh), plot_fit=False)
+    z_plane_inlier = z_plane[inlier_planes]
+    threshs_inlier = np.array(final_thresh)[inlier_planes]
+    smooth_thresh = matrix_utils.fit_threshold_curve(z_plane_inlier, np.array(threshs_inlier), 
+                                                     plot_fit=plot_fit, predict_z_plane=z_plane)
     
     if save_threshs:
         save_path = os.path.join(data_dir, gene + '_threshs.csv')
@@ -182,7 +240,8 @@ def count_spots_per_cell(cell_df, gene, fluo, image, pp_masks_im, threshs, retur
         return cell_df
     
 
-def quantify_gene(cell_df, gene, image, pp_masks_im, load_thresh=True, crop_im=True, return_num_spots=False):
+def quantify_gene(cell_df, gene, image, pp_masks_im, load_thresh=True, 
+                  crop_im=True, row_slice=None, col_slice=None, return_num_spots=False):
     
     fluo = gene_to_fluo[gene]
     
@@ -190,10 +249,10 @@ def quantify_gene(cell_df, gene, image, pp_masks_im, load_thresh=True, crop_im=T
         image = image[row_slice, col_slice, :]
         pp_masks_im = pp_masks_im[row_slice, col_slice, :]
     
-    image = img_utils.correct_depth_attenuation(image, 
-                                                scale_to_log_filter=True,
-                                                plot_fit=False,
-                                                fluo=fluo)
+    image, _ = img_utils.correct_depth_attenuation(image, 
+                                                   scale_to_log_filter=True,
+                                                   plot_fit=False,
+                                                   fluo=fluo)
     
     if load_thresh:
         threshs_path = os.path.join(data_dir, gene + '_threshs.csv')
@@ -210,17 +269,594 @@ def quantify_gene(cell_df, gene, image, pp_masks_im, load_thresh=True, crop_im=T
     else:
         cell_df = count_spots_per_cell(cell_df, gene, fluo, image, pp_masks_im, threshs)
         return cell_df
+
+def calc_noise_floor(im, c=6):
     
+    med = np.median(im)
+    mad = 1.4826 * np.median(np.abs(im - med))
+    floor_im = med + c * mad   # c around 4-6, tune on a deep plane
     
+    return floor_im
+    
+
+#%%
+
+gene = 'meis2'
+crop_im = True
+
+fluo = gene_to_fluo[gene]
+image = quant_gene_ims[gene].copy()
+
+if crop_im:
+    image = image[row_slice, col_slice, :]
+
+image, inlier_mask = img_utils.correct_depth_attenuation(image, 
+                                            scale_to_log_filter=True,
+                                            plot_fit=True,
+                                            fluo=fluo)
+
+set_thresh(image, gene_to_fluo[gene], inlier_mask, gene=gene, num_evals=100, plot_fit=True)
+
+cell_df, num_spots = quantify_gene(cell_df,
+                                   gene,
+                                   quant_gene_ims[gene],
+                                   pp_masks_im,
+                                   crop_im=True,
+                                   row_slice=row_slice,
+                                   col_slice=col_slice,
+                                   return_num_spots=True)
 
 #%% 
 
-genes_to_quant = ['phox2b', 'ralyl', 'zfhx3']
+# genes_to_quant = ['phox2b', 'ralyl', 'zfhx3']
 
 for gene in quant_genes:
     
-    cell_df = quantify_gene(cell_df, gene, quant_gene_ims[gene], pp_masks_im, crop_im=True)
+    print(gene)
+    fluo = gene_to_fluo[gene]
+    image = quant_gene_ims[gene].copy()
+    image = image[row_slice, col_slice, :]
+
+    image, inlier_mask = img_utils.correct_depth_attenuation(image, 
+                                                scale_to_log_filter=True,
+                                                plot_fit=False,
+                                                fluo=fluo)
     
+    set_thresh(image, fluo, inlier_mask, gene=gene, num_evals=100, plot_fit=True)
+
+#%% 
+
+# genes_to_quant = ['phox2b', 'ralyl', 'zfhx3']
+
+num_spots_dict = {}
+
+for gene in quant_genes:
+    
+    cell_df, num_spots_dict[gene] = quantify_gene(cell_df, gene, quant_gene_ims[gene], pp_masks_im,
+                            crop_im=True, row_slice=row_slice, col_slice=col_slice, return_num_spots=True)
+    
+#%%
+
+import matplotlib.pyplot as plt
+
+for gene in quant_genes:
+    
+    plt.subplots()
+    plt.plot(num_spots_dict[gene])
+    plt.title(gene)
+    
+#%% 1. per-cell, per-plane table
+
+import numpy as np, pandas as pd
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+
+gene = 'meis2'
+fluo = gene_to_fluo[gene]
+im = quant_gene_ims[gene][row_slice, col_slice, :]
+masks = pp_masks_im[row_slice, col_slice, :]
+im, _ = img_utils.correct_depth_attenuation(im, scale_to_log_filter=True,
+                                            plot_fit=False, fluo=fluo)
+threshs = np.loadtxt(os.path.join(data_dir, gene + '_threshs.csv'), delimiter=',')
+
+def per_plane_table(im, masks, fluo, threshs, scale=1.0):
+    rows = []
+    for k in tqdm(range(im.shape[2])):
+        spots = matrix_utils.count_spots(im[:,:,k], fluo, thresh=threshs[k]*scale)
+        m = masks[:,:,k]
+        ids, areas = np.unique(m[m > 0], return_counts=True)
+        if len(spots):
+            hit = m[spots[:,0], spots[:,1]]
+            cnt = pd.Series(hit[hit > 0]).value_counts()
+        else:
+            cnt = pd.Series(dtype=int)
+        for cid, a in zip(ids, areas):
+            rows.append((cid, k, a, int(cnt.get(cid, 0))))
+    return pd.DataFrame(rows, columns=['mask_id', 'plane', 'area', 'n_spots'])
+
+df = per_plane_table(im, masks, fluo, threshs)
+
+#%% 2. slope test: fold change in expected spots/pixel across the whole stack
+
+def slope_fit(d):
+    fit = smf.glm('n_spots ~ plane', data=d, family=sm.families.Poisson(),
+                  offset=np.log(d['area'])).fit(
+                      cov_type='cluster', cov_kwds={'groups': d['mask_id'].values})
+    span = d['plane'].max() - d['plane'].min()
+    b = fit.params['plane']
+    lo, hi = fit.conf_int().loc['plane']
+    return np.exp(b*span), np.exp(lo*span), np.exp(hi*span)   # fold change, 95% CI
+
+print('all planes:      FC=%.3f  CI=(%.3f, %.3f)' % slope_fit(df))
+print('without plane 0: FC=%.3f  CI=(%.3f, %.3f)' % slope_fit(df[df.plane >= 1]))
+# FC is shallowest vs deepest. Bias is bounded if the CI sits inside, say, 0.9 to 1.1.
+
+#%%
+masks = pp_masks_im[row_slice, col_slice, :]
+rows = []
+for k in range(masks.shape[2]):
+    m = masks[:,:,k]
+    ids, areas = np.unique(m[m > 0], return_counts=True)
+    rows += [(i, k, a) for i, a in zip(ids, areas)]
+geo = pd.DataFrame(rows, columns=['Mask ID', 'plane', 'area'])
+print('mask IDs in more than one plane:', geo['Mask ID'].duplicated().sum())  # expect 0
+cells = cell_df.merge(geo, on='Mask ID')
+span = cells.plane.max() - cells.plane.min()
+
+def depth_fc(d, gene, extra=''):
+    d = d.assign(y=d[gene])
+    fit = smf.glm('y ~ plane' + extra, data=d, family=sm.families.Poisson(),
+                  offset=np.log(d['area'])).fit(cov_type='HC1')
+    b = fit.params['plane']; lo, hi = fit.conf_int().loc['plane']
+    return np.exp(b*span), np.exp(lo*span), np.exp(hi*span)
+
+for g in quant_genes:
+    print('%-8s FC=%.3f  CI=(%.3f, %.3f)' % ((g,) + depth_fc(cells, g)))
+    
+#%%
+
+import numpy as np, pandas as pd
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+
+g = 'meis2'
+c = cells[cells['area'] > 0].copy()
+c['y'] = c[g]
+span = c.plane.max() - c.plane.min()
+print(len(c), 'cells,', int(c.y.sum()), 'spots')
+
+def fc(d, formula='y ~ plane', term='plane'):
+    fit = smf.glm(formula, data=d, family=sm.families.Poisson(),
+                  offset=np.log(d['area'])).fit(cov_type='HC1')
+    b = fit.params[term]; lo, hi = fit.conf_int().loc[term]
+    return np.exp(b*span), np.exp(lo*span), np.exp(hi*span)
+
+#%% 1. linear slope, with and without plane 0
+print('all planes:      FC=%.3f  CI=(%.3f, %.3f)' % fc(c))
+print('without plane 0: FC=%.3f  CI=(%.3f, %.3f)' % fc(c[c.plane >= 1]))
+
+#%% 2. shape: deep / middle / shallow thirds (catches a U that a slope misses)
+c['third'] = pd.cut(c.plane, 3, labels=['deep', 'mid', 'shallow'])
+fit = smf.glm('y ~ C(third, Treatment("mid"))', data=c, family=sm.families.Poisson(),
+              offset=np.log(c['area'])).fit(cov_type='HC1')
+ci = np.exp(fit.conf_int())
+for name in fit.params.index[1:]:
+    print('%-45s ratio vs mid = %.3f  CI=(%.3f, %.3f)' %
+          (name, np.exp(fit.params[name]), ci.loc[name, 0], ci.loc[name, 1]))
+
+#%% 3. per-plane density with bootstrap CI over cells
+rng = np.random.default_rng(0)
+planes = np.sort(c.plane.unique())
+def dens(d):
+    s = d.groupby('plane').agg(n=('y', 'sum'), a=('area', 'sum'))
+    return (s.n / s.a).reindex(planes).values
+boots = np.array([dens(c.iloc[rng.integers(0, len(c), len(c))]) for _ in range(1000)])
+lo, hi = np.nanpercentile(boots, [2.5, 97.5], axis=0)
+plt.figure(figsize=(7, 4))
+plt.fill_between(planes, lo, hi, alpha=0.3)
+plt.plot(planes, dens(c), 'o-')
+plt.xlabel('plane (0 = deepest)'); plt.ylabel('in-mask spots per pixel')
+plt.show()
+
+#%% 4. power: inject a known trend by thinning spots, see how often it is detected
+def inject(d, tc, deep_loses, rng):
+    d = d.copy()
+    frac = d.plane / d.plane.max()
+    keep = 1 - tc * (1 - frac if deep_loses else frac)
+    d['y'] = rng.binomial(d['y'].values, keep.values)
+    return d
+
+for tc in [0.10, 0.15, 0.20, 0.30]:
+    for deep_loses in [True, False]:
+        res = [fc(inject(c, tc, deep_loses, rng)) for _ in range(100)]
+        hit = np.mean([(r[2] < 1) or (r[1] > 1) for r in res])
+        print('%2.0f%% loss at %-7s end: detected in %3.0f%% of runs, mean FC=%.3f' %
+              (tc*100, 'deep' if deep_loses else 'shallow', hit*100, np.mean([r[0] for r in res])))
+
+#%%
+
+def thirds(d, formula='y ~ C(third, Treatment("mid"))', offset=True):
+    d = d[d.area > 0].copy()
+    d['third'] = pd.cut(d.plane, 3, labels=['deep', 'mid', 'shallow'])
+    fit = smf.glm(formula, data=d, family=sm.families.Poisson(),
+                  offset=np.log(d['area']) if offset else None).fit(cov_type='HC1')
+    ci = np.exp(fit.conf_int())
+    for n in fit.params.index:
+        if 'third' in n or 'area' in n:
+            print('  %-42s %.3f  CI=(%.3f, %.3f)' % (n, np.exp(fit.params[n]), ci.loc[n,0], ci.loc[n,1]))
+    return d
+
+# 1. is spots ~ area really proportional? Free coefficient on log(area)
+print('area free:')
+d = thirds(c, 'y ~ C(third, Treatment("mid")) + np.log(area)', offset=False)
+print(d.groupby('third', observed=True).area.median())
+
+# 2. does the U depend on the threshold? (uses per_plane_table from earlier)
+for s in [0.85, 1.0, 1.15]:
+    t = per_plane_table(im, masks, fluo, threshs, scale=s).rename(columns={'n_spots': 'y'})
+    print('threshold x%.2f:' % s); thirds(t)
+
+# 3. does the U depend on the planes at the extremes? Drop 3 planes at each end
+print('trimmed:'); thirds(c[(c.plane >= 3) & (c.plane <= c.plane.max() - 3)])
+
+#%%
+
+from bigfish.stack import log_filter
+from bigfish.detection.spot_detection import local_maximum_detection
+
+psf = img_utils.calc_psf_sigma(fluo) / 325
+raw = quant_gene_ims[gene][row_slice, col_slice, :]
+rows = []
+for k in range(im.shape[2]):
+    f = log_filter(im[:, :, k], psf)
+    pk = local_maximum_detection(f, psf)
+    med = np.median(f); mad = 1.4826 * np.median(np.abs(f - med))
+    t = threshs[k]
+    v_in = f[pk & (masks[:, :, k] > 0)]
+    v_out = f[pk & (masks[:, :, k] == 0)]
+    r = raw[:, :, k]
+    rows.append(dict(plane=k,
+                     thr_over_mad=(t - med) / mad,
+                     n_in=(v_in > t).sum(), n_in_85=(v_in > .85*t).sum(),
+                     n_in_115=(v_in > 1.15*t).sum(),
+                     n_out=(v_out > t).sum(),
+                     noise_gain=mad / (1.4826 * np.median(np.abs(r - np.median(r))) + 1e-9)))
+diag = pd.DataFrame(rows)
+diag['steepness'] = diag.n_in_85 / diag.n_in_115.clip(lower=1)
+print(diag.round(2).to_string(index=False))
+
+#%%
+
+def u_ratios(d, trim=0, max_plane=37):
+    d = d[(d.plane >= trim) & (d.plane <= max_plane - trim) & (d.area > 0)].copy()
+    d['third'] = pd.cut(d.plane, 3, labels=['deep', 'mid', 'shallow'])
+    fit = smf.glm('y ~ C(third, Treatment("mid")) + np.log(area)', data=d,
+                  family=sm.families.Poisson()).fit(cov_type='HC1')
+    ci = np.exp(fit.conf_int())
+    out = []
+    for n in fit.params.index[1:3]:
+        out.append('%.2f (%.2f-%.2f)' % (np.exp(fit.params[n]), ci.loc[n, 0], ci.loc[n, 1]))
+    return out
+
+floors = []
+for k in range(im.shape[2]):
+    f = log_filter(im[:, :, k], psf)
+    med = np.median(f); mad = 1.4826 * np.median(np.abs(f - med))
+    floors.append((med, mad))
+floors = np.array(floors)
+
+def clamp(c):
+    return np.maximum(threshs, floors[:, 0] + c * floors[:, 1])
+
+# (planes 36-37 are at 7.05-8.6, so c=9 would also change the shallow end; stick to c <= 8)
+for c in [7, 8]:
+    t_c = clamp(c)
+    for s in [0.85, 1.0, 1.15]:
+        t = per_plane_table(im, masks, fluo, t_c, scale=s).rename(columns={'n_spots': 'y'})
+        t = t[t.plane <= 37]
+        dp, sh = u_ratios(t, 0)
+        print('floor %d MAD  x%.2f  deep %s   shallow %s' % (c, s, dp, sh))
+        
+#%%
+
+g = 'meis2'
+cc = cells[cells['area'] > 0].copy()
+cc['y'] = cc[g]
+cc = cc[cc.plane <= 37]          # plane 38 has no in-mask data
+
+pick = pd.concat([
+    cc[cc.plane <= 8].sample(20, random_state=1),
+    cc[(cc.plane >= 15) & (cc.plane <= 25)].sample(20, random_state=1)
+])[['Mask ID', 'plane', 'area', 'y']]
+print(pick.sort_values('plane').to_string(index=False))
+
+#%%
+
+from statsmodels.nonparametric.smoothers_lowess import lowess
+
+whole = np.array(num_spots_dict['meis2'])[:38]          # drop plane 38
+A_img = im.shape[0] * im.shape[1]
+g = (cc.groupby('plane').agg(n_in=('y', 'sum'), a_in=('area', 'sum'))
+       .reindex(range(38)).fillna(0))
+g['whole'] = whole
+# in-mask density relative to out-of-mask density; flat across plane => multiplicative bias
+g['enrich'] = (g.n_in / g.a_in) / ((g.whole - g.n_in) / (A_img - g.a_in))
+print(g.round(3).to_string())
+
+# plane factor from the whole-image curve, relative to the middle of the stack
+f = lowess(whole, np.arange(38), frac=0.3, return_sorted=False)
+factor = f / np.median(f[9:30])
+cc['y_adj'] = cc.y / factor[cc.plane.values]
+
+# the check that matters: is the corrected in-mask count flat in plane?
+d = cc.assign(y_raw=cc.y, y=cc.y_adj)
+print('raw      ', u_ratios(cc.assign(y=cc.y_raw), 0))
+print('corrected', u_ratios(d, 0))
+
+#%%
+
+import numpy as np, pandas as pd
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+from statsmodels.nonparametric.smoothers_lowess import lowess
+from scipy.stats import spearmanr
+
+N_PLANES = 38          # planes 0-37, plane 38 has no in-mask data
+
+#%% helpers
+
+def get_tables(gene, scale=1.0):
+    """Per-cell table (mask_id, plane, area, y) and whole-image spot count per plane."""
+    fl = gene_to_fluo[gene]
+    img = quant_gene_ims[gene][row_slice, col_slice, :]
+    img, _ = img_utils.correct_depth_attenuation(img, scale_to_log_filter=True,
+                                                 plot_fit=False, fluo=fl)
+    th = np.loadtxt(os.path.join(data_dir, gene + '_threshs.csv'), delimiter=',') * scale
+    rows, whole = [], []
+    for k in tqdm(range(N_PLANES)):
+        spots = matrix_utils.count_spots(img[:, :, k], fl, thresh=th[k])
+        whole.append(len(spots))
+        m = masks[:, :, k]
+        ids, areas = np.unique(m[m > 0], return_counts=True)
+        if len(spots):
+            hit = m[spots[:, 0], spots[:, 1]]
+            cnt = pd.Series(hit[hit > 0]).value_counts()
+        else:
+            cnt = pd.Series(dtype=int)
+        rows += [(i, k, a, int(cnt.get(i, 0))) for i, a in zip(ids, areas)]
+    d = pd.DataFrame(rows, columns=['mask_id', 'plane', 'area', 'y'])
+    return d, np.array(whole)
+
+def correct(d, whole, frac=0.3, cap=False):
+    """Divide each cell by a plane factor from the lowess-smoothed whole-image count."""
+    f = lowess(whole, np.arange(len(whole)), frac=frac, return_sorted=False)
+    factor = f / np.median(f[9:30])
+    if cap:   # optional: never correct by more than the in-mask density implies
+        s = d.groupby('plane').agg(n=('y', 'sum'), a=('area', 'sum')).reindex(range(N_PLANES))
+        fm = lowess((s.n / s.a).fillna(0).values, np.arange(N_PLANES), frac=0.3, return_sorted=False)
+        factor = np.minimum(factor, fm / np.median(fm[9:30]))
+    return d.assign(y_adj=d.y / factor[d.plane.values]), factor
+
+def slope_fc(d, col):
+    d = d[d.area > 0].assign(yy=d[col])
+    fit = smf.glm('yy ~ plane + np.log(area)', data=d,
+                  family=sm.families.Poisson()).fit(cov_type='HC1')
+    span = d.plane.max() - d.plane.min()
+    lo, hi = fit.conf_int().loc['plane']
+    return np.exp(fit.params['plane'] * span), np.exp(lo * span), np.exp(hi * span)
+
+def ends_ratio(d, col):
+    """Plane 0 and planes 36-37 vs the middle (planes 9-29), area exponent free."""
+    grp = np.where(d.plane == 0, 'p0',
+          np.where(d.plane >= 36, 'p36_37',
+          np.where((d.plane >= 9) & (d.plane <= 29), 'mid', 'other')))
+    d = d.assign(grp=grp, yy=d[col])
+    d = d[(d.grp != 'other') & (d.area > 0)]
+    fit = smf.glm('yy ~ C(grp, Treatment("mid")) + np.log(area)', data=d,
+                  family=sm.families.Poisson()).fit(cov_type='HC1')
+    ci = np.exp(fit.conf_int())
+    return ['%s %.2f (%.2f-%.2f)' % (n.split('T.')[-1].rstrip(']'), np.exp(fit.params[n]),
+                                     ci.loc[n, 0], ci.loc[n, 1])
+            for n in fit.params.index if 'grp' in n]
+
+def report(d, whole, label, frac=0.3, cap=False):
+    d2, factor = correct(d, whole, frac, cap)
+    print('--', label)
+    for name, col in [('raw      ', 'y'), ('corrected', 'y_adj')]:
+        dd = d2.assign(y=d2[col])
+        print('  %s slope FC=%.3f (%.3f, %.3f) | thirds deep/shallow %s | ends %s' %
+              ((name,) + slope_fc(d2, col) + (u_ratios(dd, 0), ends_ratio(d2, col))))
+    return d2, factor
+
+#%% 0. base case: meis2 at the original thresholds, plus cells per plane
+
+d1, whole1 = get_tables('meis2', 1.0)
+d1 = d1[d1.area > 0]
+
+n_cells = d1.groupby('plane').size().reindex(range(N_PLANES), fill_value=0)
+print(n_cells.to_string())
+fit = smf.glm('n ~ plane', data=pd.DataFrame({'n': n_cells.values, 'plane': n_cells.index}),
+              family=sm.families.Poisson()).fit(cov_type='HC1')
+print('cells per plane: FC across stack=%.2f (%.2f, %.2f)' %
+      (np.exp(fit.params['plane'] * 37), *np.exp(fit.conf_int().loc['plane'] * 37)))
+print('spearman(plane, whole-image count):', spearmanr(np.arange(N_PLANES), whole1))
+
+#%% 1 and 2. linear slope on corrected counts, and planes 0 / 36-37 directly
+
+d1c, factor1 = report(d1, whole1, 'meis2 x1.00')
+# if the ends are 10% or more below 1.00 above, rerun with the capped factor:
+d1cap, _ = report(d1, whole1, 'meis2 x1.00, capped', cap=True)
+
+# per-plane pooled density, normalised to the middle, with bootstrap CI over cells
+rng = np.random.default_rng(0)
+planes = np.arange(N_PLANES)
+def dens(d, col):
+    s = d.groupby('plane').agg(n=(col, 'sum'), a=('area', 'sum')).reindex(planes)
+    return (s.n / s.a).values
+def norm(v): return v / np.nanmedian(v[9:30])
+boots = np.array([norm(dens(d1c.iloc[rng.integers(0, len(d1c), len(d1c))], 'y_adj'))
+                  for _ in range(500)])
+lo, hi = np.nanpercentile(boots, [2.5, 97.5], axis=0)
+plt.figure(figsize=(8, 4))
+plt.fill_between(planes, lo, hi, alpha=0.3, label='corrected, 95% CI')
+plt.plot(planes, norm(dens(d1c, 'y_adj')), 'o-', label='corrected')
+plt.plot(planes, norm(dens(d1c, 'y')), 'x--', label='raw')
+plt.axhline(1, color='k', lw=0.5)
+plt.xlabel('plane (0 = deepest)'); plt.ylabel('in-mask density / middle')
+plt.legend(); plt.show()
+# note: pooled spots per pixel is only a rough shape check, since spots scale with area^~2
+
+#%% 3. sensitivity to the lowess smoothing
+for fr in [0.2, 0.3, 0.5]:
+    report(d1, whole1, 'meis2 x1.00, lowess frac=%.1f' % fr, frac=fr)
+
+#%% 4. threshold robustness (about 1 minute per scale)
+# the whole-image curve is recomputed at each scale so it moves with the cells
+for s in [0.85, 1.15]:
+    ds, ws = get_tables('meis2', s)
+    ds = ds[ds.area > 0]
+    report(ds, ws, 'meis2 x%.2f' % s)
+
+#%% 5. second gene (needs <gene>_threshs.csv and the image loaded in quant_gene_ims)
+GENE2 = 'syt1'     # change to whichever gene you quantify next
+for s in [1.0, 0.85, 1.15]:
+    d2g, w2g = get_tables(GENE2, s)
+    d2g = d2g[d2g.area > 0]
+    report(d2g, w2g, '%s x%.2f' % (GENE2, s))
+    
+#%%
+
+all_masks = tifffile.imread(r'D:\2026-09-12_FN_SNr_2\post\masks\s01L\integrated_masks.tiff')
+all_masks = np.transpose(all_masks,[1,2,0])
+all_masks[np.isnan(all_masks)] = 0
+
+#%% 1. imports and helpers
+import os
+import numpy as np, pandas as pd
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+from statsmodels.nonparametric.smoothers_lowess import lowess
+from tqdm import tqdm
+
+N_PLANES = 38                       # planes 0-37, plane 38 has no in-mask data
+REF = slice(9, 30)                  # reference planes for normalisation (as before)
+masks = pp_masks_im[row_slice, col_slice, :]               # curated cells
+all_masks = all_masks[row_slice, col_slice, :]              # every segmented cell
+
+def get_tables(gene, scale=1.0, exclude_curated=True):
+    """One detection pass per plane. Returns the per-cell table, the whole-image count,
+    and the spots-per-pixel density inside tissue (all cells; curated cells excluded
+    by default so the factor is independent of the cells being corrected)."""
+    fl = gene_to_fluo[gene]
+    img = quant_gene_ims[gene][row_slice, col_slice, :]
+    img, _ = img_utils.correct_depth_attenuation(img, scale_to_log_filter=True,
+                                                 plot_fit=False, fluo=fl)
+    th = np.loadtxt(os.path.join(data_dir, gene + '_threshs.csv'), delimiter=',') * scale
+    rows, whole, tissue_n, tissue_a = [], [], [], []
+    for k in tqdm(range(N_PLANES)):
+        spots = matrix_utils.count_spots(img[:, :, k], fl, thresh=th[k])
+        whole.append(len(spots))
+        m = masks[:, :, k]
+        ids, areas = np.unique(m[m > 0], return_counts=True)
+        if len(spots):
+            hit = m[spots[:, 0], spots[:, 1]]
+            cnt = pd.Series(hit[hit > 0]).value_counts()
+        else:
+            cnt = pd.Series(dtype=int)
+        rows += [(i, k, a, int(cnt.get(i, 0))) for i, a in zip(ids, areas)]
+
+        tissue = all_masks[:, :, k] > 0
+        if exclude_curated:
+            tissue = tissue & (m == 0)
+        tissue_a.append(tissue.sum())
+        tissue_n.append(tissue[spots[:, 0], spots[:, 1]].sum() if len(spots) else 0)
+    d = pd.DataFrame(rows, columns=['mask_id', 'plane', 'area', 'y'])
+    d = d[d.area > 0]
+    tissue_dens = np.array(tissue_n) / np.maximum(np.array(tissue_a), 1)
+    return d, np.array(whole), tissue_dens
+
+def norm_factor(v, frac=0.3):
+    f = lowess(v, np.arange(len(v)), frac=frac, return_sorted=False)
+    return f / np.median(f[REF])
+
+def inmask_density(d):
+    s = d.groupby('plane').agg(n=('y', 'sum'), a=('area', 'sum')).reindex(range(N_PLANES))
+    return (s.n / s.a).fillna(0).values
+
+def apply_factor(d, factor):
+    return d.assign(y_adj=d.y / factor[d.plane.values])
+
+def slope_fc(d, col):
+    d = d[d.area > 0].assign(yy=d[col])
+    fit = sm.GLM(d.yy, sm.add_constant(pd.DataFrame({'plane': d.plane, 'la': np.log(d.area)})),
+                 family=sm.families.Poisson()).fit(cov_type='HC1')
+    span = d.plane.max() - d.plane.min()
+    lo, hi = fit.conf_int().loc['plane']
+    return np.exp(fit.params['plane'] * span), np.exp(lo * span), np.exp(hi * span)
+
+def u_ratios(d, col, trim=0, max_plane=37):
+    d = d[(d.plane >= trim) & (d.plane <= max_plane - trim) & (d.area > 0)].copy()
+    d['third'] = pd.cut(d.plane, 3, labels=['deep', 'mid', 'shallow'])
+    d['yy'] = d[col]
+    fit = smf.glm('yy ~ C(third, Treatment("mid")) + np.log(area)', data=d,
+                  family=sm.families.Poisson()).fit(cov_type='HC1')
+    ci = np.exp(fit.conf_int())
+    return ['%.2f (%.2f-%.2f)' % (np.exp(fit.params[n]), ci.loc[n, 0], ci.loc[n, 1])
+            for n in fit.params.index[1:3]]
+
+def ends_ratio(d, col):
+    """Deep end (planes 0-2), shallow end (planes 33-37) vs the middle (planes 9-29)."""
+    grp = np.where(d.plane <= 2, 'deep_0_2',
+          np.where(d.plane >= 33, 'shallow_33_37',
+          np.where((d.plane >= 9) & (d.plane <= 29), 'mid', 'other')))
+    d = d.assign(grp=grp, yy=d[col])
+    d = d[(d.grp != 'other') & (d.area > 0)]
+    fit = smf.glm('yy ~ C(grp, Treatment("mid")) + np.log(area)', data=d,
+                  family=sm.families.Poisson()).fit(cov_type='HC1')
+    ci = np.exp(fit.conf_int())
+    return ['%s %.2f (%.2f-%.2f)' % (n.split('T.')[-1].rstrip(']'), np.exp(fit.params[n]),
+                                     ci.loc[n, 0], ci.loc[n, 1])
+            for n in fit.params.index if 'grp' in n]
+
+#%% 2. does the all-cells factor track the in-mask factor? (about 1 minute)
+GENE = 'meis2'
+d1, whole1, tdens1 = get_tables(GENE, 1.0)
+
+f_whole = norm_factor(whole1)
+f_inmask = norm_factor(inmask_density(d1))
+f_tissue = norm_factor(tdens1)
+
+chk = pd.DataFrame({'whole': f_whole, 'tissue(all cells)': f_tissue, 'in_mask': f_inmask})
+chk['implied_error_whole'] = chk['in_mask'] / chk['whole']
+chk['implied_error_tissue'] = chk['in_mask'] / chk['tissue(all cells)']
+print(chk.round(2).to_string())
+
+fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+ax[0].plot(f_whole, 'o-', label='whole image')
+ax[0].plot(f_tissue, '^-', label='all cells (excl. curated)')
+ax[0].plot(f_inmask, 's-', label='curated cells')
+ax[0].axhline(1, color='k', lw=0.5); ax[0].set_ylabel('factor vs middle'); ax[0].legend()
+ax[1].plot(chk.implied_error_whole, 'o-', label='whole image')
+ax[1].plot(chk.implied_error_tissue, '^-', label='all cells')
+ax[1].axhline(1, color='k', lw=0.5)
+ax[1].set_ylabel('in-mask / factor'); ax[1].set_xlabel('plane (0 = deepest)'); ax[1].legend()
+plt.tight_layout(); plt.show()
+
+#%%
+
+fw, fi = f_whole, f_inmask
+def one_sided(fw, cap):
+    f = fw.copy()
+    k0 = int(np.argmin(fw))
+    f[k0:] = np.minimum(f[k0:], cap)
+    return f
+for cap in [1.15, 1.2, 1.25, 1.3]:
+    e = fi / one_sided(fw, cap)
+    print('cap %.2f  planes 33-37: %s   worst: %.2f' % (cap, e[33:].round(2), np.abs(1 - e).max()))
 #%%
 
 from matplotlib.ticker import MaxNLocator
@@ -314,6 +950,102 @@ intensity_image_crop = img_utils.correct_depth_attenuation(intensity_image_crop,
 
 # thresholds_bigfish = matrix_utils.find_zstack_thresh_bigfish(intensity_image_crop, fluo)
 
+#%%
+
+from bigfish.detection.spot_detection import local_maximum_detection
+import matplotlib.pyplot as plt
+
+def mirror_peak_values(im_filtered, minimum_distance):
+    vals = []
+    for k in range(im_filtered.shape[2]):
+        f = im_filtered[:,:,k]
+        med = np.median(f)
+        mirror = 2*med - f                      # reflect about the background median
+        mask = local_maximum_detection(mirror, minimum_distance)
+        vals.append(mirror[mask])
+    return vals
+
+def mirror_counts(vals, threshs):
+    return np.array([(v > t).sum() if np.isfinite(t) else np.nan
+                     for v, t in zip(vals, threshs)])
+
+from scipy.stats import spearmanr
+
+raw = np.array(first_thresh, dtype=float)
+smooth = np.array(smooth_thresh, dtype=float)
+
+mp = mirror_peak_values(im_filtered, minimum_distance)   # from the earlier code
+
+tail99  = np.array([np.quantile(v, 0.99)  for v in mp])
+tail999 = np.array([np.quantile(v, 0.999) for v in mp])
+
+ok = np.isfinite(raw)
+for name, s in [('q99', tail99), ('q999', tail999)]:
+    print(name, 'vs raw knee   :', spearmanr(s[ok], raw[ok]))
+    print(name, 'vs residual   :', spearmanr(s[ok], (raw - smooth)[ok]))
+    
+#%%
+
+n_raw = mirror_counts(mp, raw)
+n_smooth = mirror_counts(mp, smooth)
+deep = np.arange(len(raw)) >= 2*len(raw)//3
+print('deep planes, total mirror peaks  raw:', np.nansum(n_raw[deep]),
+      ' smooth:', np.nansum(n_smooth[deep]))
+print('shallow planes                   raw:', np.nansum(n_raw[~deep]),
+      ' smooth:', np.nansum(n_smooth[~deep]))
+
+# count at smooth vs raw threshold, using the real image, per plane
+def real_counts(im_filtered, mask_fn, threshs):
+    out = []
+    for k, t in enumerate(threshs):
+        f = im_filtered[:,:,k]
+        out.append((f[mask_fn(f, minimum_distance)] > t).sum() if np.isfinite(t) else np.nan)
+    return np.array(out)
+
+c_raw = real_counts(im_filtered, local_maximum_detection, raw)
+c_smooth = real_counts(im_filtered, local_maximum_detection, smooth)
+print(np.c_[idx, c_raw, c_smooth, c_smooth / c_raw][::3])
+
+#%%
+
+import bigfish.detection as detection
+
+from bigfish.plot import plot_detection
+
+im = image[:,:,0]
+fluo = 'Alexa Fluor 594'
+thresh = 3517.9224
+
+psf_sigma = img_utils.calc_psf_sigma(fluo)
+
+if thresh is not None:
+    
+    spots = detection.detect_spots(im, 
+                                   threshold=thresh,
+                                   voxel_size=325, 
+                                   spot_radius=psf_sigma)
+    
+else:
+    
+    spots = detection.detect_spots(im, 
+                                   voxel_size=325, 
+                                   spot_radius=psf_sigma)
+
+try:
+    
+    spots_post_decomposition, _, _ = detection.decompose_dense(
+         im,
+         spots=spots,
+         voxel_size=325,
+         spot_radius=psf_sigma)
+    
+except RuntimeError:
+    
+    print('Unable to build reference spot: this plane is likely out of focus')
+    spots_post_decomposition = spots
+    
+
+plot_detection(im, spots, rescale=True)
 
 # %% spot counting
 
